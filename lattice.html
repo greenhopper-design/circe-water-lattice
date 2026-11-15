@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>키르케 물격자</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* 도면 한 장: 왼쪽 큰 칸(10 × 10 m, 십자 100 × 100 × 5겹), 오른쪽 조작판. 좁으면 위아래로 쌓음 */
+:root{
+  --paper:#fbfbfc; --sheet:#ffffff; --ink:#2b2f36; --mute:#6b7280; --line:#dfe3ec;
+  --blue:#6e8ce1; --chip:#eef1f8;
+  --f-body:"IBM Plex Sans KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#15171c; --sheet:#1b1e24; --ink:#e3e6ec; --mute:#9aa1ad; --line:#2d323b;
+  --blue:#8fa6ec; --chip:#242833; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#15171c; --sheet:#1b1e24; --ink:#e3e6ec; --mute:#9aa1ad; --line:#2d323b;
+  --blue:#8fa6ec; --chip:#242833; color-scheme:dark }
+html,body{background:var(--paper);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px}
+h1{margin:0;font-size:clamp(22px,3vw,30px);font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.sub{margin:4px 0 0;color:var(--mute);max-width:62ch}
+.tag{font-family:var(--f-mono);font-size:12px;color:var(--blue);letter-spacing:.06em;text-transform:uppercase}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.stage{position:relative;background:var(--sheet);border:1px dashed var(--blue);padding:clamp(10px,2.4vw,28px);min-width:0}
+.stage canvas{display:block;width:100%;max-width:100%;aspect-ratio:1/1;height:auto}
+.corner{position:absolute;width:18px;height:18px;pointer-events:none}
+.corner::before,.corner::after{content:"";position:absolute;background:var(--blue)}
+.corner::before{left:8px;top:0;width:1px;height:18px}.corner::after{top:8px;left:0;height:1px;width:18px}
+.c1{left:-9px;top:-9px}.c2{right:-9px;top:-9px}.c3{left:-9px;bottom:-9px}.c4{right:-9px;bottom:-9px}
+.scale{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:11px;color:var(--mute);margin-top:8px}
+aside{display:flex;flex-direction:column;gap:18px;min-width:0}
+fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+legend{font-size:12px;color:var(--mute);letter-spacing:.04em;padding:0;margin-bottom:6px}
+.seg{display:grid;gap:6px}
+.seg.s3{grid-template-columns:repeat(3,1fr)}.seg.s4{grid-template-columns:repeat(4,1fr)}
+.seg button{font:inherit;font-size:13px;line-height:1.3;padding:8px 6px;border:1px solid var(--line);background:var(--sheet);color:var(--ink);cursor:pointer;border-radius:2px}
+.seg button small{display:block;font-family:var(--f-mono);font-size:11px;color:var(--mute)}
+.seg button[aria-pressed="true"]{border-color:var(--blue);background:var(--chip);box-shadow:inset 0 0 0 1px var(--blue)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.row{display:flex;align-items:center;gap:10px}
+.row label{flex:0 0 74px;font-size:13px}
+.row input[type=range]{flex:1;min-width:0;accent-color:var(--blue)}
+.row output{flex:0 0 44px;text-align:right;font-family:var(--f-mono);font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+.play{font:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--ink);background:var(--ink);color:var(--sheet);cursor:pointer;border-radius:2px}
+.loupe{display:flex;gap:12px;align-items:flex-start}
+.loupe canvas{width:132px;height:132px;border:1px dashed var(--blue);background:var(--sheet);image-rendering:pixelated;flex:0 0 auto}
+.loupe p{margin:0;font-size:12.5px;color:var(--mute)}
+dl{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0;font-size:13px}
+dt{color:var(--mute)}dd{margin:0;font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.note{font-size:13px;color:var(--mute);max-width:70ch;margin:0}
+.note b{color:var(--ink);font-weight:500}
+html,body{margin:0}*{box-sizing:border-box}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav style="display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;font-size:14px"><a href="index.html" style="color:var(--mute);text-decoration:none">처음</a><a href="plan.html" style="color:var(--mute);text-decoration:none">평면 12장</a><a href="cube.html" style="color:var(--mute);text-decoration:none">정육면체 12개</a><a href="lattice.html" style="color:var(--ink);text-decoration:none;border-bottom:1px solid var(--blue)">물격자 한 칸</a></nav>
+
+  <header>
+    <div>
+      <div class="tag">Circe · water lattice</div>
+      <h1>격자는 제자리, 빛만 물처럼</h1>
+      <p class="sub">10 cm 십자 100 × 100개를 5겹으로 겹쳤습니다. 십자의 중심은 한 칸도 움직이지 않고, 물결이 지나갈 때 팔 길이와 진하기가 바뀌며, 빈 공간이 열리고 닫히며 바람을 따라 흘러갑니다.</p>
+    </div>
+  </header>
+
+  <div class="grid">
+    <div>
+      <div class="stage">
+        <span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span>
+        <canvas id="cv" aria-label="십자 5겹 물격자 한 칸, 10 × 10 m"></canvas>
+      </div>
+      <div class="scale"><span>0 m</span><span>5 m</span><span>10 m · 십자 100칸</span></div>
+    </div>
+
+    <aside>
+      <fieldset>
+        <legend>장면 · 오디세이아 10권</legend>
+        <div class="seg s3" id="scene">
+          <button type="button" data-v="0" aria-pressed="true">키르케의 집<small>구름</small></button>
+          <button type="button" data-v="1" aria-pressed="false">와인<small>가로 결</small></button>
+          <button type="button" data-v="2" aria-pressed="false">바람 자루<small>세로 흐름</small></button>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>바람 · 아이올로스 궤도 지점</legend>
+        <div class="seg s4" id="wind">
+          <button type="button" data-v="0" aria-pressed="false">51<small>0.3</small></button>
+          <button type="button" data-v="1" aria-pressed="false">74<small>5.7</small></button>
+          <button type="button" data-v="2" aria-pressed="true">77<small>12.4</small></button>
+          <button type="button" data-v="3" aria-pressed="false">92<small>38.8</small></button>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>빈 공간을 미는 바람</legend>
+        <div class="seg s3" id="dir">
+          <button type="button" data-v="0" aria-pressed="true">가운데에서<small>뻗어감</small></button>
+          <button type="button" data-v="1" aria-pressed="false">가로로<small>왼 → 오</small></button>
+          <button type="button" data-v="2" aria-pressed="false">아래로<small>위 → 아래</small></button>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>물</legend>
+        <div class="row"><label for="layers">겹 수</label><input id="layers" type="range" min="1" max="5" step="1" value="5"><output id="layersO">5</output></div>
+        <div class="row"><label for="holes">빈 공간 변화</label><input id="holes" type="range" min="0" max="100" value="60"><output id="holesO">60</output></div>
+        <div class="row"><label for="refr">물결 굴절</label><input id="refr" type="range" min="0" max="100" value="60"><output id="refrO">60</output></div>
+        <div class="row"><label for="caus">물빛</label><input id="caus" type="range" min="0" max="100" value="70"><output id="causO">70</output></div>
+        <div class="row"><label for="speed">흐름 속도</label><input id="speed" type="range" min="0" max="100" value="40"><output id="speedO">40</output></div>
+        <button type="button" class="play" id="play">멈춤</button>
+      </fieldset>
+      <fieldset>
+        <legend>확대 · 오와 열 확인</legend>
+        <div class="loupe">
+          <canvas id="lp" width="132" height="132" aria-label="커서 주변 십자 12 × 12칸 확대"></canvas>
+          <p>큰 그림 위에 커서나 손가락을 대면 그 자리 12 × 12칸을 키워 보여 줍니다. 십자 중심이 줄을 벗어나지 않습니다.</p>
+        </div>
+      </fieldset>
+      <dl>
+        <dt>보이는 십자</dt><dd id="nCross">–</dd>
+        <dt>빈 칸 (구멍)</dt><dd id="nVoid">–</dd>
+        <dt>바람</dt><dd id="nWind">–</dd>
+        <dt>화면</dt><dd id="nFps">–</dd>
+      </dl>
+    </aside>
+  </div>
+
+  <p class="note"><b>읽는 법.</b> 겹마다 같은 100 × 100 자리에 십자를 놓고, 위에서 몸이 시작되는 단부터 아래로 다섯 단까지 겹쳤습니다. 깊은 겹일수록 옅습니다. 물결은 Perlin 노이즈 높이장으로 만들었고, 기울기만큼 가로·세로 팔이 늘고 줄어 빛이 굴절하는 것처럼 보입니다. 물마루(밝은 그물 무늬)에서는 십자가 옅어집니다. 무늬와 장면·바람 규칙은 키르케 십자 시트와 같은 식이며, 바람 세기가 흐름 속도와 늘이는 정도를 정합니다.</p>
+</div>
+
+<script>
+(() => {
+  // ---- Ken Perlin 개선판(2002) 3D 노이즈, 시트 스크립트와 같은 식 ----
+  const P = new Uint8Array(512);
+  { let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+    const p = [...Array(256).keys()];
+    for (let i = 255; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
+    for (let i = 0; i < 512; i++) P[i] = p[i & 255]; }
+  const fade = t => t * t * t * (t * (t * 6 - 15) + 10);
+  const lerp = (a, b, t) => a + t * (b - a);
+  function grad(h, x, y, z) { h &= 15; const u = h < 8 ? x : y, v = h < 4 ? y : (h === 12 || h === 14 ? x : z);
+    return ((h & 1) ? -u : u) + ((h & 2) ? -v : v); }
+  function perlin(x, y, z) {
+    const X = Math.floor(x), Y = Math.floor(y), Z = Math.floor(z);
+    x -= X; y -= Y; z -= Z; const xi = X & 255, yi = Y & 255, zi = Z & 255;
+    const u = fade(x), v = fade(y), w = fade(z);
+    const A = P[xi] + yi, AA = P[A] + zi, AB = P[A + 1] + zi, B = P[xi + 1] + yi, BA = P[B] + zi, BB = P[B + 1] + zi;
+    return lerp(lerp(lerp(grad(P[AA], x, y, z), grad(P[BA], x - 1, y, z), u), lerp(grad(P[AB], x, y - 1, z), grad(P[BB], x - 1, y - 1, z), u), v),
+                lerp(lerp(grad(P[AA + 1], x, y, z - 1), grad(P[BA + 1], x - 1, y, z - 1), u), lerp(grad(P[AB + 1], x, y - 1, z - 1), grad(P[BB + 1], x - 1, y - 1, z - 1), u), v), w);
+  }
+  function fbm(x, y, z, oct, gain) { let s = 0, a = 1, f = 1, n = 0;
+    for (let o = 0; o < oct; o++) { s += a * perlin(x * f + 17.3 * o, y * f + 5.1 * o, z * f); n += a; a *= gain; f *= 2; } return s / n; }
+  console.assert(Math.abs(perlin(1, 4, 0)) < 1e-9 && Math.abs(perlin(2, 5, 7)) < 1e-9, 'perlin is 0 on lattice points');
+
+  // ---- 키르케 규칙 (make_kirke_cross_sheet.py 와 같은 값) ----
+  const N = 100, LV = 16, DZ = 0.18, F0 = 0.42, VOID = 0.22, L5 = 5;
+  const ROWS = [{ name: '키르케의 집', ax: 0, ay: 0, gain: 0.5, wind: 0.2 },
+                { name: '와인', ax: 2.5, ay: 0, gain: 0.62, wind: 1.0 },
+                { name: '바람 자루', ax: 0, ay: 6.0, gain: 0.55, wind: 1.0 }];
+  const WINDS = [{ o: 51, sp: 0.3 }, { o: 74, sp: 5.7 }, { o: 77, sp: 12.4 }, { o: 92, sp: 38.8 }];
+  const state = { scene: 0, wind: 2, dir: 0, layers: 5, holes: 0.6, refr: 0.6, caus: 0.7, speed: 0.4, playing: true, t: 0 };
+
+  // mask[l][i*N+j]: l 번째 겹(몸이 시작된 단에서 l 단 아래)에 십자가 있나. first: 몸이 시작된 단
+  let mask = Array.from({ length: 5 }, () => new Uint8Array(100 * 100)), first = new Int16Array(N * N), sNow = 0;
+  function buildField() {
+    const row = ROWS[state.scene], s = Math.min(1, WINDS[state.wind].sp / 15) * row.wind; sNow = s;
+    const sx = 1 + row.ax * (0.4 + s), sy = 1 + row.ay * (0.5 + s), warp = 0.8 + 2.2 * s;
+    const seed = state.scene * 4 + state.wind, F = new Float32Array(N * N * LV), top = new Float32Array(N * N);
+    for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+      const X = i * 0.1 + seed * 37, Y = j * 0.1 + seed * 37;
+      const ex = Math.min(i, N - 1 - i, j, N - 1 - j) / (N - 1);
+      let mx = -9;
+      for (let k = 0; k < LV; k++) {
+        const Z = (LV - 1 - k) * DZ;                                    // k = 0 이 맨 위
+        const wx = fbm(X * 0.18 + 3.1, Y * 0.18, Z * 0.18, 3, 0.5) * warp;
+        const wy = fbm(X * 0.18, Y * 0.18 + 7.7, Z * 0.18, 3, 0.5) * warp;
+        let f = fbm((X + wx) * F0 / sx, (Y + wy) * F0 / sy, Z * F0 * 2, 6, row.gain) + 0.55 * k / (LV - 1);
+        f -= 0.5 * Math.max(0, 0.06 - ex) / 0.06 * (0.6 + 0.4 * fbm(X * 1.7, Y * 1.7, Z, 2, 0.5));
+        F[(i * N + j) * LV + k] = f; if (f > mx) mx = f;
+      }
+      top[i * N + j] = mx;
+    }
+    FS = F; THR = Float32Array.from(top).sort()[Math.floor(VOID * N * N)];
+    D.fill(0); updateMask();
+    document.getElementById('nWind').textContent = '궤도 ' + WINDS[state.wind].o + ' · ' + WINDS[state.wind].sp + ' m/s';
+  }
+
+  // 빈 공간이 바뀌는 규칙: 칸마다 흐르는 노이즈 D 를 몸 값에 더함 -> 구멍이 열리고 닫히며 바람 방향으로 떠내려감
+  let FS = null, THR = 0;
+  const D = new Float32Array(N * N), DS = 4, DN = Math.ceil(N / DS) + 2, DC = new Float32Array(DN * DN);
+  // 빈 공간을 미는 바람 세 가지. v = 바람 세기에 따른 속도, e = 바람 방향으로 늘이는 배율
+  //   radial: 가운데에서 바깥으로 뻗어감 (반지름을 따라 흐르고, 가운데가 잘 비어 구멍이 태어나는 자리)
+  //   side  : 왼쪽에서 오른쪽으로 가로질러 붊      down: 위에서 아래로 붊
+  function flowField(t, s) {
+    const v = 0.35 + 1.1 * s, e = 1.6 + 2.4 * s, mode = state.dir;
+    for (let a = 0; a < DN; a++) for (let b = 0; b < DN; b++) {
+      const x = a * DS * 0.1, y = b * DS * 0.1;
+      let n;
+      if (mode === 0) {
+        const dx = x - 5, dy = y - 5, r = Math.hypot(dx, dy) + 1e-6;
+        n = fbm(dx / r * 1.3 + 11.7, dy / r * 1.3, (r - v * t) * 0.38 * 1.4 / e + t * 0.05, 3, 0.55)
+            - 0.35 * Math.exp(-(r * r) / 2.2);                                   // 가운데는 비기 쉬움
+      } else if (mode === 1) {
+        n = fbm((x - v * t) * 0.38 / e + 11.7, y * 0.38 * 1.3, t * 0.08, 3, 0.55);
+      } else {
+        n = fbm(x * 0.38 * 1.3 + 11.7, (y - v * t) * 0.38 / e, t * 0.08, 3, 0.55);
+      }
+      DC[a * DN + b] = n;
+    }
+    for (let i = 0; i < N; i++) { const u = i / DS, a = Math.floor(u), fu = u - a, su = fu * fu * (3 - 2 * fu);
+      for (let j = 0; j < N; j++) { const v = j / DS, b = Math.floor(v), fv = v - b, sv = fv * fv * (3 - 2 * fv);
+        D[i * N + j] = (DC[a * DN + b] * (1 - su) + DC[(a + 1) * DN + b] * su) * (1 - sv) + (DC[a * DN + b + 1] * (1 - su) + DC[(a + 1) * DN + b + 1] * su) * sv; } }
+  }
+  function updateMask() {
+    const amt = state.holes * 1.6; let solidN = 0;
+    for (let c = 0; c < N * N; c++) {
+      const d = amt * D[c];
+      let k0 = LV; for (let k = 0; k < LV; k++) if (FS[c * LV + k] + d > THR) { k0 = k; break; }
+      first[c] = k0; if (k0 < LV) solidN++;
+      for (let l = 0; l < L5; l++) { const k = k0 + l; mask[l][c] = k < LV && FS[c * LV + k] + d > THR ? 1 : 0; }
+    }
+    voidPct = 100 * (1 - solidN / (N * N));
+    return solidN;
+  }
+  let voidPct = 0;
+  // 자체 점검은 첫 계산 뒤 한 번: 첫 겹은 몸이 있는 칸과 같다
+
+  // ---- 그리기 ----
+  const cv = document.getElementById('cv'), g = cv.getContext('2d');
+  const lp = document.getElementById('lp'), lg = lp.getContext('2d');
+  let px = 0, ink = [43, 47, 54], paper = '#fff', look = { x: 0.5, y: 0.5 };
+  // 물 높이장은 3칸(30 cm)마다 계산하고 사이는 이어 붙임 (물결은 십자보다 훨씬 커서 충분, 계산량 1/9)
+  const ST = 3, NC = Math.ceil((N + 2) / ST) + 2, HC = new Float32Array(NC * NC);
+  const H = new Float32Array((N + 2) * (N + 2));
+  const BINS = 8;
+
+  function readColors() {
+    const cs = getComputedStyle(document.documentElement);
+    const hex = cs.getPropertyValue('--ink').trim(); paper = cs.getPropertyValue('--sheet').trim() || '#fff';
+    const m = hex.match(/^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i);
+    if (m) ink = [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)];
+  }
+  function resize() {
+    const w = cv.clientWidth, dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(w * dpr); cv.height = cv.width; px = cv.width / N;
+  }
+
+  function frame(dt) {
+    const row = ROWS[state.scene], s = sNow;
+    if (state.playing) state.t += dt * (0.15 + 1.4 * state.speed) * (0.4 + s);
+    const t = state.t;
+    // 물결도 고른 바람 방향을 따라 흐름 (가운데에서 퍼짐은 물결 자체는 천천히 돌기)
+    const fx = state.dir === 1 ? 1 : (state.dir === 2 ? 0 : 0.35 * Math.cos(t * 0.05));
+    const fy = state.dir === 2 ? 1 : (state.dir === 1 ? 0 : 0.35 * Math.sin(t * 0.05));
+    const stretchX = 1 + (state.dir === 1 ? 1.2 : row.ax * 0.25) * (0.4 + s), stretchY = 1 + (state.dir === 2 ? 1.2 : row.ay * 0.15) * (0.5 + s);
+    if (state.holes > 0) { flowField(t, s); updateMask(); }
+    g.fillStyle = paper; g.fillRect(0, 0, cv.width, cv.height);
+    g.lineCap = 'butt';
+    const base = px * 0.82, lw = Math.max(1, px * 0.16);
+    let shown = 0;
+    for (let l = state.layers - 1; l >= 0; l--) {
+      // 이 겹의 물 높이장 (테두리 한 칸 더 계산해 기울기를 구함)
+      const zl = t * 0.12 + l * 0.9;
+      for (let a = 0; a < NC; a++) for (let b = 0; b < NC; b++) {
+        const x = (a * ST - 1) * 0.1, y = (b * ST - 1) * 0.1;
+        const qx = (x - fx * t * 0.5) * 0.55 / stretchX, qy = (y - fy * t * 0.5) * 0.55 / stretchY;
+        const w = fbm(qx * 0.6 + 4.2, qy * 0.6, zl * 0.5, 2, 0.5) * 1.4;     // 물이 스스로 휘어 흐름
+        HC[a * NC + b] = fbm(qx + w, qy - w, zl, 3, 0.5);
+      }
+      for (let i = 0; i < N + 2; i++) { const u = i / ST, a = Math.floor(u), fu = u - a;
+        for (let j = 0; j < N + 2; j++) { const v = j / ST, b = Math.floor(v), fv = v - b;
+          const h00 = HC[a * NC + b], h10 = HC[(a + 1) * NC + b], h01 = HC[a * NC + b + 1], h11 = HC[(a + 1) * NC + b + 1];
+          const su = fu * fu * (3 - 2 * fu), sv = fv * fv * (3 - 2 * fv);   // 부드럽게 이어 붙여 기울기가 꺾이지 않게
+          H[i * (N + 2) + j] = (h00 * (1 - su) + h10 * su) * (1 - sv) + (h01 * (1 - su) + h11 * su) * sv; } }
+      const paths = Array.from({ length: BINS }, () => new Path2D());
+      const layerA = 0.95 - 0.16 * l;
+      const m = mask[l];
+      for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+        const c = i * N + j; if (!m[c]) continue;
+        const h = H[(i + 1) * (N + 2) + (j + 1)];
+        const gx = (H[(i + 2) * (N + 2) + (j + 1)] - H[i * (N + 2) + (j + 1)]) * 10;
+        const gy = (H[(i + 1) * (N + 2) + (j + 2)] - H[(i + 1) * (N + 2) + j]) * 10;
+        const ridge = Math.pow(1 - Math.min(1, Math.abs(h) * 11), 2);           // 높이 0 근처의 가는 띠 = 밝은 물빛 그물
+        const k = state.refr * 2.2;
+        const lx = base * Math.min(1.5, Math.max(0.12, 1 + k * gx)), ly = base * Math.min(1.5, Math.max(0.12, 1 + k * gy));
+        const depth = (first[c] + l) / (LV + L5);
+        const trough = Math.min(1, Math.max(0, -h * 2.5));                      // 물골 = 깊고 진함
+        let a = layerA * (1 - 0.55 * depth) * (1 - state.caus * 0.95 * ridge) * (0.55 + 0.75 * trough * state.caus + 0.45 * (1 - state.caus));
+        const bin = Math.max(0, Math.min(BINS - 1, Math.floor(a * BINS)));
+        if (bin === 0) continue;
+        const cx = (i + 0.5) * px, cy = (j + 0.5) * px, p = paths[bin];
+        p.moveTo(cx - lx / 2, cy); p.lineTo(cx + lx / 2, cy);
+        p.moveTo(cx, cy - ly / 2); p.lineTo(cx, cy + ly / 2);
+        shown++;
+      }
+      g.lineWidth = lw;
+      for (let b = 1; b < BINS; b++) { g.strokeStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${(b + 0.5) / BINS * 0.62})`; g.stroke(paths[b]); }
+    }
+    // 확대창: 커서 주변 12 × 12칸
+    const sz = 12 * px, sx0 = Math.max(0, Math.min(cv.width - sz, look.x * cv.width - sz / 2)), sy0 = Math.max(0, Math.min(cv.height - sz, look.y * cv.height - sz / 2));
+    lg.fillStyle = paper; lg.fillRect(0, 0, lp.width, lp.height);
+    lg.imageSmoothingEnabled = false; lg.drawImage(cv, sx0, sy0, sz, sz, 0, 0, lp.width, lp.height);
+    lg.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--blue'); lg.globalAlpha = 0.35; lg.lineWidth = 1;
+    for (let q = 0; q <= 12; q++) { const v = Math.round(q * lp.width / 12) + 0.5; lg.beginPath(); lg.moveTo(v, 0); lg.lineTo(v, lp.height); lg.moveTo(0, v); lg.lineTo(lp.width, v); lg.stroke(); }
+    lg.globalAlpha = 1;
+    return shown;
+  }
+
+  let last = performance.now(), acc = 0, cnt = 0, nShown = 0;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  function loop(now) {
+    const dt = Math.min(0.1, (now - last) / 1000); last = now;
+    nShown = frame(dt); acc += dt; cnt++;
+    if (acc > 0.5) { document.getElementById('nFps').textContent = Math.round(cnt / acc) + ' fps';
+      document.getElementById('nVoid').textContent = voidPct.toFixed(0) + ' %';
+      document.getElementById('nCross').textContent = nShown.toLocaleString('ko-KR') + '개'; acc = 0; cnt = 0; }
+    if (state.playing) requestAnimationFrame(loop);
+  }
+  function redraw() { nShown = frame(0); document.getElementById('nCross').textContent = nShown.toLocaleString('ko-KR') + '개';
+    document.getElementById('nVoid').textContent = voidPct.toFixed(0) + ' %'; }
+
+  // ---- 조작 ----
+  function seg(id, key) {
+    document.getElementById(id).addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      state[key] = +b.dataset.v;
+      for (const x of e.currentTarget.querySelectorAll('button')) x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+      buildField(); if (!state.playing) redraw();
+    });
+  }
+  seg('scene', 'scene'); seg('wind', 'wind'); seg('dir', 'dir');
+  for (const [id, key, f] of [['layers', 'layers', v => v], ['holes', 'holes', v => v / 100],['refr', 'refr', v => v / 100], ['caus', 'caus', v => v / 100], ['speed', 'speed', v => v / 100]]) {
+    const el = document.getElementById(id), out = document.getElementById(id + 'O');
+    el.addEventListener('input', () => { state[key] = f(+el.value); out.textContent = el.value; if (!state.playing) redraw(); });
+  }
+  const playBtn = document.getElementById('play');
+  function setPlaying(on) { state.playing = on; playBtn.textContent = on ? '멈춤' : '재생'; if (on) { last = performance.now(); requestAnimationFrame(loop); } }
+  playBtn.addEventListener('click', () => setPlaying(!state.playing));
+  cv.addEventListener('pointermove', e => { const r = cv.getBoundingClientRect(); look = { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height }; if (!state.playing) redraw(); });
+  new ResizeObserver(() => { resize(); if (!state.playing) redraw(); }).observe(cv);
+  const mq = window.matchMedia('(prefers-color-scheme: dark)');
+  mq.addEventListener('change', () => { readColors(); if (!state.playing) redraw(); });
+  new MutationObserver(() => { readColors(); if (!state.playing) redraw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  readColors(); resize(); buildField();
+  { let a = 0, b = 0; for (let c = 0; c < N * N; c++) { a += mask[0][c]; b += first[c] < LV ? 1 : 0; }
+    console.assert(a === b, 'layer 0 equals solid columns'); }
+  if (reduce.matches) { state.t = 3; setPlaying(false); redraw(); } else setPlaying(true);
+})();
+</script>
+
+</body>
+</html>

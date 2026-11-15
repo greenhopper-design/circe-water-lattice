@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>평면을 세운 정육면체</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+.pair{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.pair.both{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:760px){.pair.both{grid-template-columns:minmax(0,1fr)}}
+figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+figcaption{font-size:12px;color:var(--mute);font-family:var(--f-mono)}
+video{width:100%;height:auto;background:#fff}
+.check{display:flex;align-items:center;gap:6px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav><span class="brand">Circe · water lattice</span><a href="index.html">처음</a><a href="plan.html">평면 12장</a><a href="cube.html" aria-current="page">정육면체 12개</a><a href="lattice.html">물격자 한 칸</a></nav>
+  <header>
+    <h1>평면을 세운 정육면체</h1>
+    <p class="sub">평면과 같은 규칙(노이즈 · 장면 · 바람 · 빈 공간을 미는 바람)을 아래로 10 m 이어 계산한 정육면체 12개입니다. 재생하면 평면과 같은 순간에 정육면체 안의 빈 공간도 함께 흘러갑니다.</p>
+  </header>
+  <div class="bar">
+    <button class="btn" id="play" type="button">재생</button>
+    <label class="field" for="seek">시간<input id="seek" type="range" min="0" max="1000" value="0"><output id="seekO">0.0</output></label>
+    <label class="check" for="both"><input id="both" type="checkbox"> 평면과 나란히 보기</label>
+  </div>
+  <div class="sheet">
+    <div class="pair" id="pair">
+      <figure><video id="cube" src="media/cubes.mp4" poster="media/cubes_poster.jpg" muted loop playsinline preload="auto"></video><figcaption>정육면체 12개 · 10 × 10 × 10 m</figcaption></figure>
+      <figure id="planFig" hidden><video id="plan" src="media/plan.mp4" poster="media/plan_poster.jpg" muted loop playsinline preload="auto"></video><figcaption>평면 12장 · 같은 순간</figcaption></figure>
+    </div>
+  </div>
+  <p class="note"><b>읽는 법.</b> 10 cm 칸 100 × 100 × 100 = 10 m 정육면체, 칸 하나 = XYZ 십자 하나. 위는 구름처럼 흩어지고 아래로 갈수록 덩어리가 됩니다. 위에서 내려오는 빛이 몸을 지날수록 줄어 안쪽과 아래가 어둡습니다. 1,200개(12칸 × 100순간)의 정육면체를 미리 계산해 영상으로 묶었습니다. 칸 배치는 평면 12장과 같습니다.</p>
+  <div class="sheet"><img src="media/cubes.jpg" alt="정육면체 12개 정지 그림" loading="lazy"></div>
+</div>
+<script>
+const $ = id => document.getElementById(id), cube = $('cube'), plan = $('plan');
+const vids = () => $('both').checked ? [cube, plan] : [cube];
+function setPlaying(on) {
+  if (on) vids().forEach(v => { v.currentTime = cube.currentTime; v.play().catch(() => {}); });
+  else [cube, plan].forEach(v => v.pause());
+  $('play').textContent = on ? '멈춤' : '재생';
+}
+$('play').addEventListener('click', () => setPlaying(cube.paused));
+$('both').addEventListener('change', e => {
+  $('planFig').hidden = !e.target.checked; $('pair').classList.toggle('both', e.target.checked);
+  plan.currentTime = cube.currentTime; if (!cube.paused && e.target.checked) plan.play().catch(() => {}); else plan.pause();
+});
+$('seek').addEventListener('input', e => { if (!cube.duration) return; const t = e.target.value / 1000 * cube.duration; cube.currentTime = t; plan.currentTime = t; });
+cube.addEventListener('timeupdate', () => {
+  if (!cube.duration) return;
+  $('seek').value = Math.round(cube.currentTime / cube.duration * 1000);
+  $('seekO').textContent = (cube.currentTime / cube.duration * 60).toFixed(1);         // 평면 페이지의 시간(0 → 60)과 같은 눈금
+});
+// 두 영상 맞춤: 화면 그릴 때마다 정육면체 영상 시각에 평면 영상을 맞춤 (찾는 중이면 기다림)
+(function sync() {
+  if ($('both').checked && plan.readyState >= 1 && !plan.seeking) {
+    const d = plan.currentTime - cube.currentTime;
+    if (Math.abs(d) > 0.2 && Math.abs(d) < cube.duration - 0.3) plan.currentTime = cube.currentTime;
+    if (cube.paused !== plan.paused) cube.paused ? plan.pause() : plan.play().catch(() => {});
+  }
+  requestAnimationFrame(sync);
+})();
+if (!matchMedia('(prefers-reduced-motion: reduce)').matches) cube.addEventListener('canplay', () => setPlaying(true), { once: true });
+</script>
+</body>
+</html>

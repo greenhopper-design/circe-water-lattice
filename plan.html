@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>물격자 평면 12장</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(8px,1.6vw,22px)}
+@media (max-width:640px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{display:flex;flex-direction:column;gap:4px;min-width:0}
+.tile canvas{width:100%;aspect-ratio:1/1;height:auto;display:block}
+.tile span{font-size:11.5px;color:var(--mute);font-family:var(--f-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav><span class="brand">Circe · water lattice</span><a href="index.html">처음</a><a href="plan.html" aria-current="page">평면 12장</a><a href="cube.html">정육면체 12개</a><a href="lattice.html">물격자 한 칸</a></nav>
+  <header>
+    <h1>물격자 평면 12장</h1>
+    <p class="sub">10 cm 십자 100 × 100개를 5겹으로 겹친 평면 12칸을 브라우저에서 바로 계산합니다. 재생하면 바람이 흐르고, 십자 중심은 제자리에 둔 채 빈 공간이 열리고 닫히며 흘러갑니다.</p>
+  </header>
+  <div class="bar">
+    <button class="btn" id="play" type="button">멈춤</button>
+    <label class="field" for="time">시간<input id="time" type="range" min="0" max="60" step="0.1" value="0"><output id="timeO">0.0</output></label>
+    <label class="field" for="speed">속도<input id="speed" type="range" min="0.25" max="2" step="0.25" value="1"><output id="speedO">1×</output></label>
+    <label class="field" for="holes">빈 공간 변화<input id="holes" type="range" min="0" max="100" value="60"><output id="holesO">60</output></label>
+    <span class="mono" id="stat">계산 중…</span>
+  </div>
+  <div class="sheet"><div class="tiles" id="tiles"></div></div>
+  <p class="note"><b>읽는 법.</b> 칸 하나는 10 × 10 m. 열은 아이올로스 바람 궤도 51 · 74 · 77 · 92(약한 바람 → 센 바람)입니다. 장면(집 · 와인 · 바람 자루)과 빈 공간을 미는 바람의 방향(가운데에서 뻗음 · 가로 · 아래)은 nD_Rise 영상 00:13의 12칸과 빈 비율 · 결 방향이 가장 가까운 것으로 골랐습니다. 시간 1.0 = 바람 무늬가 흐르는 단위 시간이며, 1× 속도는 발표 영상(8초, 시간 0 → 60)과 같습니다.</p>
+</div>
+<script src="engine.js"></script>
+<script>
+const PICKS = [{scene:0,wind:0,dir:2,t:80},{scene:2,wind:1,dir:2,t:80},{scene:2,wind:2,dir:1,t:20.5},{scene:2,wind:3,dir:1,t:59},
+  {scene:0,wind:0,dir:2,t:17},{scene:0,wind:1,dir:1,t:55.5},{scene:2,wind:2,dir:2,t:3},{scene:1,wind:3,dir:1,t:13.5},
+  {scene:1,wind:0,dir:0,t:24},{scene:2,wind:1,dir:2,t:34.5},{scene:2,wind:2,dir:2,t:59},{scene:2,wind:3,dir:2,t:80}];
+const box = document.getElementById('tiles'), sims = [];
+PICKS.forEach((p, i) => {
+  const d = document.createElement('div'); d.className = 'tile';
+  const cv = document.createElement('canvas'); cv.setAttribute('aria-label', '평면 ' + (i + 1));
+  const s = document.createElement('span');
+  s.textContent = String(i + 1).padStart(2, '0') + ' · ' + Kirke.ROWS[p.scene].name + ' · 궤도 ' + Kirke.WINDS[p.wind].o + ' · ' + Kirke.DIRS[p.dir];
+  d.append(cv, s); box.append(d);
+  sims.push({ sim: Kirke.makeLattice(cv, { scene: p.scene, wind: p.wind, dir: p.dir }), cv, t0: p.t });
+});
+let T = 0, playing = !matchMedia('(prefers-reduced-motion: reduce)').matches, speed = 1, last = performance.now();
+const $ = id => document.getElementById(id);
+function colors() {
+  const cs = getComputedStyle(document.documentElement), m = cs.getPropertyValue('--ink').trim().match(/^#?(..)(..)(..)$/);
+  const ink = m ? [1, 2, 3].map(k => parseInt(m[k], 16)) : [43, 47, 54], paper = cs.getPropertyValue('--sheet').trim() || '#fff';
+  sims.forEach(o => o.sim.colors(ink, paper));
+}
+function sizes() { const dpr = Math.min(1.5, devicePixelRatio || 1);
+  sims.forEach(o => { const w = Math.min(420, Math.round(o.cv.clientWidth * dpr)); if (o.cv.width !== w) { o.cv.width = w; o.cv.height = w; } }); }
+function drawAll() { let v = 0; sims.forEach(o => { o.sim.draw(o.t0 + T); v += o.sim.voidPct(); });
+  $('time').value = T.toFixed(1); $('timeO').textContent = T.toFixed(1); return v / sims.length; }
+let acc = 0, n = 0, vAvg = 0;
+function loop(now) {
+  const dt = Math.min(0.15, (now - last) / 1000); last = now;
+  T += dt * 7.5 * speed; if (T > 60) T -= 60;                       // 7.5 = 발표 영상과 같은 빠르기 (8초에 60)
+  vAvg = drawAll(); acc += dt; n++;
+  if (acc > 0.5) { $('stat').textContent = '빈 칸 평균 ' + vAvg.toFixed(0) + ' % · ' + Math.round(n / acc) + ' fps'; acc = 0; n = 0; }
+  if (playing) requestAnimationFrame(loop);
+}
+function setPlaying(on) { playing = on; $('play').textContent = on ? '멈춤' : '재생'; if (on) { last = performance.now(); requestAnimationFrame(loop); } }
+$('play').addEventListener('click', () => setPlaying(!playing));
+$('time').addEventListener('input', e => { T = +e.target.value; if (!playing) { vAvg = drawAll(); $('stat').textContent = '빈 칸 평균 ' + vAvg.toFixed(0) + ' %'; } });
+$('speed').addEventListener('input', e => { speed = +e.target.value; $('speedO').textContent = speed + '×'; });
+$('holes').addEventListener('input', e => { $('holesO').textContent = e.target.value; sims.forEach(o => o.sim.state.holes = e.target.value / 100); if (!playing) drawAll(); });
+new ResizeObserver(() => { sizes(); if (!playing) drawAll(); }).observe(box);
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { colors(); if (!playing) drawAll(); });
+// 무거운 첫 계산(12칸)은 화면이 먼저 뜬 뒤에
+requestAnimationFrame(() => setTimeout(() => {
+  colors(); sizes(); sims.forEach(o => o.sim.build()); vAvg = drawAll();
+  $('stat').textContent = '빈 칸 평균 ' + vAvg.toFixed(0) + ' %';
+  setPlaying(playing);
+}, 30));
+</script>
+</body>
+</html>

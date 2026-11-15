@@ -1,0 +1,36 @@
+/* 키르케 물격자: 흰 도면 종이 + 파란 점선 틀 (시트와 같은 말투). 어두운 화면에서는 반전 */
+:root{
+  --paper:#fbfbfc; --sheet:#ffffff; --ink:#2b2f36; --mute:#6b7280; --line:#dfe3ec;
+  --blue:#6e8ce1; --chip:#eef1f8;
+  --f-body:"IBM Plex Sans KR","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#15171c; --sheet:#1b1e24; --ink:#e3e6ec; --mute:#9aa1ad; --line:#2d323b; --blue:#8fa6ec; --chip:#242833; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#15171c; --sheet:#1b1e24; --ink:#e3e6ec; --mute:#9aa1ad; --line:#2d323b; --blue:#8fa6ec; --chip:#242833; color-scheme:dark }
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+nav{display:flex;flex-wrap:wrap;gap:6px 18px;align-items:baseline;font-size:14px}
+nav .brand{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);margin-right:auto}
+nav a{color:var(--mute);text-decoration:none;padding:2px 0;border-bottom:1px solid transparent}
+nav a:hover{color:var(--ink)}
+nav a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--blue)}
+h1{margin:0;font-size:clamp(24px,3.2vw,34px);font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+.sub{margin:6px 0 0;color:var(--mute);max-width:70ch}
+.tag{font-family:var(--f-mono);font-size:12px;color:var(--blue);letter-spacing:.06em;text-transform:uppercase}
+.sheet{position:relative;background:var(--sheet);border:1px dashed var(--blue);padding:clamp(10px,2vw,24px)}
+.bar{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center}
+.btn{font:inherit;font-size:14px;padding:8px 14px;border:1px solid var(--ink);background:var(--ink);color:var(--sheet);cursor:pointer;border-radius:2px}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.field{display:flex;align-items:center;gap:8px;font-size:13px;min-width:0}
+.field input[type=range]{width:min(220px,40vw);accent-color:var(--blue)}
+.field output,.mono{font-family:var(--f-mono);font-size:12px;color:var(--mute);font-variant-numeric:tabular-nums}
+.note{font-size:13.5px;color:var(--mute);max-width:72ch;margin:0}
+.note b{color:var(--ink);font-weight:500}
+img,video{max-width:100%;display:block}
