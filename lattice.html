@@ -101,6 +101,7 @@ html,body{margin:0}*{box-sizing:border-box}
           <button type="button" data-v="2" aria-pressed="true">77<small>12.4</small></button>
           <button type="button" data-v="3" aria-pressed="false">92<small>38.8</small></button>
         </div>
+        <button type="button" class="play" id="orbitBtn" aria-pressed="false" style="background:var(--sheet);color:var(--ink)">궤도 재생</button>
       </fieldset>
       <fieldset>
         <legend>빈 공간을 미는 바람</legend>
@@ -146,10 +147,11 @@ html,body{margin:0}*{box-sizing:border-box}
       <dt>흐름 속도 v</dt><dd id="wdV">–</dd><dt>바람 쪽 늘임 e</dt><dd id="wdE">–</dd>
       <dt>재생 시간 t</dt><dd id="wdT">–</dd><dt>빈 공간이 흘러간 거리</dt><dd id="wdD">–</dd>
     </dl>
-    <p class="note"><b>바람 데이터가 재생되는 법.</b> 선은 바람 관측 위성 Aeolus(유럽우주국, 2018–2023)의 궤도 233지점을 지나며 만나는 지상 바람 세기입니다. 위성이 잰 값이 아니라 그 궤도 위의 2026-10-20 기상 모델 값(Open-Meteo)입니다. 233곳을 약한 순서로 세워 가장 약한 곳(51), 3분의 1(74), 3분의 2(77), 가장 센 곳(92)을 골랐고, 위 버튼으로 고른 지점이 파랗게 표시됩니다. 고른 풍속은 15 m/s에서 1이 되도록 맞춘 세기 s가 되고(장면마다 받는 정도가 다름), s가 빈 공간의 흐름 속도 v와 바람 쪽으로 늘이는 정도 e를 정합니다. 재생하면 빈 공간이 v × t 만큼 바람 방향으로 흘러갑니다. <a href="https://greenhopper-design.github.io/aeolus-wind-viewer/" style="color:var(--blue)">Aeolus 궤도 바람 뷰어 열기</a></p>
+    <p class="note"><b>바람 데이터가 재생되는 법.</b> 선은 바람 관측 위성 Aeolus(유럽우주국, 2018–2023)의 궤도 233지점을 지나며 만나는 지상 바람 세기입니다. 위성이 잰 값이 아니라 그 궤도 위의 2026-10-20 기상 모델 값(Open-Meteo)입니다. 233곳을 약한 순서로 세워 가장 약한 곳(51), 3분의 1(74), 3분의 2(77), 가장 센 곳(92)을 골랐고, 위 버튼으로 고른 지점이 파랗게 표시됩니다. <b>궤도 재생</b>을 누르면 점이 궤도를 따라 움직이고, 그때그때의 바람으로 무늬가 바뀝니다(한 바퀴 약 58초). 평면 12장과 정육면체 12개는 이 궤도 위 네 곳에서 멈춰 본 모습입니다. 고른 풍속은 15 m/s에서 1이 되도록 맞춘 세기 s가 되고(장면마다 받는 정도가 다름), s가 빈 공간의 흐름 속도 v와 바람 쪽으로 늘이는 정도 e를 정합니다. 재생하면 빈 공간이 v × t 만큼 바람 방향으로 흘러갑니다. <a href="https://greenhopper-design.github.io/aeolus-wind-viewer/" style="color:var(--blue)">Aeolus 궤도 바람 뷰어 열기</a></p>
   </section>
 </div>
 
+<script src="wind.js"></script>
 <script>
 (() => {
   // ---- Ken Perlin 개선판(2002) 3D 노이즈, 시트 스크립트와 같은 식 ----
@@ -180,14 +182,18 @@ html,body{margin:0}*{box-sizing:border-box}
                 { name: '와인', ax: 2.5, ay: 0, gain: 0.62, wind: 1.0 },
                 { name: '바람 자루', ax: 0, ay: 6.0, gain: 0.55, wind: 1.0 }];
   const WINDS = [{ o: 51, sp: 0.3 }, { o: 74, sp: 5.7 }, { o: 77, sp: 12.4 }, { o: 92, sp: 38.8 }];
-  const state = { scene: 0, wind: 2, dir: 0, layers: 5, holes: 0.6, refr: 0.6, caus: 0.7, speed: 0.4, playing: true, t: 0 };
+  const state = { scene: 0, wind: 2, dir: 0, layers: 5, holes: 0.6, refr: 0.6, caus: 0.7, speed: 0.4, playing: true, t: 0, orbit: false, oi: 77 };
+  // 궤도 재생: oi = 궤도 지점(0 ~ 232, 소수 = 두 지점 사이). 고정일 때는 고른 지점의 풍속
+  const SPD = window.KirkeWind.SP;
+  const spNow = () => { if (!state.orbit) return WINDS[state.wind].sp; const i = Math.floor(state.oi) % 233, f = state.oi - Math.floor(state.oi); return SPD[i] * (1 - f) + SPD[(i + 1) % 233] * f; };
+  let sBuilt = 0, lastBuild = 0;
 
   // mask[l][i*N+j]: l 번째 겹(몸이 시작된 단에서 l 단 아래)에 십자가 있나. first: 몸이 시작된 단
   let mask = Array.from({ length: 5 }, () => new Uint8Array(100 * 100)), first = new Int16Array(N * N), sNow = 0;
   function buildField() {
-    const row = ROWS[state.scene], s = Math.min(1, WINDS[state.wind].sp / 15) * row.wind; sNow = s;
+    const row = ROWS[state.scene], s = Math.min(1, spNow() / 15) * row.wind; sNow = s; sBuilt = s;
     const sx = 1 + row.ax * (0.4 + s), sy = 1 + row.ay * (0.5 + s), warp = 0.8 + 2.2 * s;
-    const seed = state.scene * 4 + state.wind, F = new Float32Array(N * N * LV), top = new Float32Array(N * N);
+    const seed = state.scene * 4 + (state.orbit ? 2 : state.wind), F = new Float32Array(N * N * LV), top = new Float32Array(N * N);
     for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
       const X = i * 0.1 + seed * 37, Y = j * 0.1 + seed * 37;
       const ex = Math.min(i, N - 1 - i, j, N - 1 - j) / (N - 1);
@@ -204,8 +210,10 @@ html,body{margin:0}*{box-sizing:border-box}
     }
     FS = F; THR = Float32Array.from(top).sort()[Math.floor(VOID * N * N)];
     D.fill(0); updateMask();
-    document.getElementById('nWind').textContent = '궤도 ' + WINDS[state.wind].o + ' · ' + WINDS[state.wind].sp + ' m/s';
+    showWind();
   }
+
+  function showWind() { document.getElementById('nWind').textContent = '궤도 ' + (state.orbit ? Math.floor(state.oi) : WINDS[state.wind].o) + ' · ' + spNow().toFixed(1) + ' m/s'; }
 
   // 빈 공간이 바뀌는 규칙: 칸마다 흐르는 노이즈 D 를 몸 값에 더함 -> 구멍이 열리고 닫히며 바람 방향으로 떠내려감
   let FS = null, THR = 0;
@@ -268,6 +276,11 @@ html,body{margin:0}*{box-sizing:border-box}
   }
 
   function frame(dt) {
+    if (state.orbit && state.playing) {
+      state.oi = (state.oi + dt * 4) % 233;                                   // 1초에 4지점, 한 바퀴 약 58초
+      sNow = Math.min(1, spNow() / 15) * ROWS[state.scene].wind; showWind();
+      if (Math.abs(sNow - sBuilt) > 0.06 && performance.now() - lastBuild > 500) { buildField(); lastBuild = performance.now(); }
+    }
     const row = ROWS[state.scene], s = sNow;
     if (state.playing) state.t += dt * (0.15 + 1.4 * state.speed) * (0.4 + s);
     const t = state.t;
@@ -342,10 +355,19 @@ html,body{margin:0}*{box-sizing:border-box}
     document.getElementById('nVoid').textContent = voidPct.toFixed(0) + ' %'; }
 
   // ---- 조작 ----
+  const orbitBtn = document.getElementById('orbitBtn');
+  function setOrbit(on, from) {
+    state.orbit = on; if (on) state.oi = from != null ? from : WINDS[state.wind].o;
+    orbitBtn.setAttribute('aria-pressed', on ? 'true' : 'false'); orbitBtn.textContent = on ? '궤도 재생 중 · 누르면 멈춤' : '궤도 재생';
+    orbitBtn.style.borderColor = on ? 'var(--blue)' : ''; orbitBtn.style.boxShadow = on ? 'inset 0 0 0 1px var(--blue)' : '';
+    for (const x of document.querySelectorAll('#wind button')) x.setAttribute('aria-pressed', !on && +x.dataset.v === state.wind ? 'true' : 'false');
+    buildField(); lastBuild = performance.now(); if (!state.playing) redraw();
+  }
+  orbitBtn.addEventListener('click', () => setOrbit(!state.orbit));
   function seg(id, key) {
     document.getElementById(id).addEventListener('click', e => {
       const b = e.target.closest('button'); if (!b) return;
-      state[key] = +b.dataset.v;
+      state[key] = +b.dataset.v; if (key === 'wind' && state.orbit) { state.orbit = false; orbitBtn.setAttribute('aria-pressed', 'false'); orbitBtn.textContent = '궤도 재생'; orbitBtn.style.borderColor = ''; orbitBtn.style.boxShadow = ''; }
       for (const x of e.currentTarget.querySelectorAll('button')) x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
       buildField(); if (!state.playing) redraw();
     });
@@ -365,7 +387,8 @@ html,body{margin:0}*{box-sizing:border-box}
   new MutationObserver(() => { readColors(); if (!state.playing) redraw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   readColors(); resize(); buildField();
-  window.__kirke = { state, ROWS, WINDS, s: () => sNow };   // 아래 바람 데이터 판이 읽음
+  window.__kirke = { state, ROWS, WINDS, s: () => sNow, sp: spNow };
+  { const q = new URLSearchParams(location.search); if (q.get('orbit')) setOrbit(true, q.get('oi') != null ? +q.get('oi') : null); }   // ?orbit=1&oi=88 로 바로 궤도 재생   // 아래 바람 데이터 판이 읽음
   { let a = 0, b = 0; for (let c = 0; c < N * N; c++) { a += mask[0][c]; b += first[c] < LV ? 1 : 0; }
     console.assert(a === b, 'layer 0 equals solid columns'); }
   if (reduce.matches) { state.t = 3; setPlaying(false); redraw(); } else setPlaying(true);
@@ -393,13 +416,17 @@ html,body{margin:0}*{box-sizing:border-box}
     g.setLineDash([]); g.textAlign = 'left'; g.fillStyle = mute; g.fillText('15 m/s 에서 s = 1', L + 6, Y(15) - 8);
     g.textAlign = 'right'; g.fillText('궤도 지점 →', W - R, H - 9); g.textAlign = 'left'; g.fillText('m/s', 4, 8);
     g.strokeStyle = mute; g.lineWidth = 1; g.beginPath(); SP.forEach((v, i) => i ? g.lineTo(X(i), Y(v)) : g.moveTo(X(i), Y(v))); g.stroke();
-    const cur = K.WINDS[K.state.wind].o;
+    const cur = K.state.orbit ? -1 : K.WINDS[K.state.wind].o;
     for (const o of Object.keys(PICK).map(Number)) { const i = o - FIRST, on = o === cur, x = X(i), y = Y(SP[i]);
       g.strokeStyle = on ? blue : mute; g.lineWidth = on ? 1.5 : 1; g.setLineDash(on ? [] : [2, 3]); g.beginPath(); g.moveTo(x, Y(0)); g.lineTo(x, y); g.stroke(); g.setLineDash([]);
       g.fillStyle = on ? blue : css('--sheet'); g.beginPath(); g.arc(x, y, on ? 5 : 3.5, 0, 7); g.fill(); g.stroke();
       g.fillStyle = on ? ink : mute; g.textAlign = 'center'; g.fillText(o, x, H - 9); }
-    const w = K.WINDS[K.state.wind], row = K.ROWS[K.state.scene], s = K.s(), v = 0.35 + 1.1 * s, e = 1.6 + 2.4 * s, t = K.state.t;
-    $('wdO').textContent = '궤도 ' + w.o; $('wdSp').textContent = w.sp.toFixed(1) + ' m/s'; $('wdR').textContent = '233곳 중 ' + PICK[w.o] + '번째';
+    const orb = K.state.orbit, oNow = orb ? K.state.oi : K.WINDS[K.state.wind].o, spv = K.sp();
+    if (orb) { const x = X(oNow - FIRST), y = Y(spv); g.strokeStyle = blue; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, Y(0)); g.lineTo(x, T); g.stroke();
+      g.fillStyle = blue; g.beginPath(); g.arc(x, y, 6, 0, 7); g.fill(); }
+    const row = K.ROWS[K.state.scene], s = K.s(), v = 0.35 + 1.1 * s, e = 1.6 + 2.4 * s, t = K.state.t;
+    $('wdO').textContent = '궤도 ' + Math.floor(oNow) + (orb ? ' (재생 중)' : ''); $('wdSp').textContent = spv.toFixed(1) + ' m/s';
+    $('wdR').textContent = '233곳 중 ' + (SP.filter(q => q < spv).length + 1) + '번째';
     $('wdS').textContent = s.toFixed(2) + '  (' + row.name + ' × ' + row.wind + ')';
     $('wdV').textContent = v.toFixed(2); $('wdE').textContent = '× ' + e.toFixed(2);
     $('wdT').textContent = t.toFixed(1); $('wdD').textContent = (v * t).toFixed(1) + ' m · ' + DIRS[K.state.dir];
