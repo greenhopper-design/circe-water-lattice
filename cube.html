@@ -35,6 +35,14 @@ video{width:100%;height:auto;background:#fff}
     </div>
   </div>
   <p class="note"><b>읽는 법.</b> 10 cm 칸 100 × 100 × 100 = 10 m 정육면체, 칸 하나 = XYZ 십자 하나. 위는 구름처럼 흩어지고 아래로 갈수록 덩어리가 됩니다. 위에서 내려오는 빛이 몸을 지날수록 줄어 안쪽과 아래가 어둡습니다. 1,200개(12칸 × 100순간)의 정육면체를 미리 계산해 영상으로 묶었습니다. 칸 배치는 평면 12장과 같습니다.</p>
+  <section id="windData" style="display:flex;flex-direction:column;gap:10px">
+    <div class="tag" style="font-family:var(--f-mono);font-size:12px;color:var(--blue);letter-spacing:.06em;text-transform:uppercase">Wind data · 정육면체에 넣은 바람</div>
+    <canvas id="wd" aria-label="Aeolus 궤도 233지점의 지상 바람 세기와 정육면체에 쓴 네 지점" style="display:block;width:100%;height:190px;background:var(--sheet);border:1px solid var(--line)"></canvas>
+    <div style="overflow-x:auto"><table id="wt" style="border-collapse:collapse;width:100%;min-width:560px;font-size:13px;font-variant-numeric:tabular-nums">
+      <thead><tr style="color:var(--mute);text-align:left"><th style="padding:4px 8px 4px 0;font-weight:500">칸</th><th style="font-weight:500">장면</th><th style="font-weight:500">궤도 · 풍속</th><th style="font-weight:500">세기 s</th><th style="font-weight:500">흐름 속도 v</th><th style="font-weight:500">미는 방향</th><th style="font-weight:500;text-align:right">흘러간 거리</th></tr></thead>
+      <tbody></tbody></table></div>
+    <p class="note"><b>바람 데이터가 재생되는 법.</b> 선은 바람 관측 위성 Aeolus(유럽우주국, 2018–2023)의 궤도 233지점을 지나며 만나는 지상 바람 세기입니다. 위성이 잰 값이 아니라 그 궤도 위의 2026-10-20 기상 모델 값(Open-Meteo)입니다. 약한 순서로 세워 가장 약한 곳(51), 3분의 1(74), 3분의 2(77), 가장 센 곳(92)을 골랐습니다. 정육면체 12개는 칸마다 이 네 바람 가운데 하나를 받습니다. 풍속은 15 m/s에서 1이 되도록 맞춘 세기 s가 되고(장면마다 받는 정도가 다름), s가 빈 공간이 흐르는 속도 v를 정합니다. 영상이 재생되는 동안 빈 공간은 칸마다 v × 시간 만큼 미는 방향으로 흘러갑니다. 표의 마지막 칸이 지금까지 흘러간 거리입니다.</p>
+  </section>
   <div class="sheet"><img src="media/cubes.jpg" alt="정육면체 12개 정지 그림" loading="lazy"></div>
 </div>
 <script>
@@ -66,6 +74,26 @@ cube.addEventListener('timeupdate', () => {
   requestAnimationFrame(sync);
 })();
 if (!matchMedia('(prefers-reduced-motion: reduce)').matches) cube.addEventListener('canplay', () => setPlaying(true), { once: true });
+</script>
+<script src="wind.js"></script>
+<script>
+// 바람 표: 칸마다 받은 바람과, 영상 시각에 맞춰 빈 공간이 흘러간 거리 (engine.js 와 같은 식: s = min(1, 풍속 / 15) x 장면 계수, v = 0.35 + 1.1 s)
+(() => {
+  const PICKS = [{scene:0,wind:0,dir:2},{scene:2,wind:1,dir:2},{scene:2,wind:2,dir:1},{scene:2,wind:3,dir:1},{scene:0,wind:0,dir:2},{scene:0,wind:1,dir:1},
+                 {scene:2,wind:2,dir:2},{scene:1,wind:3,dir:1},{scene:1,wind:0,dir:0},{scene:2,wind:1,dir:2},{scene:2,wind:2,dir:2},{scene:2,wind:3,dir:2}];
+  const ROWS = [['키르케의 집', 0.2], ['와인', 1.0], ['바람 자루', 1.0]], WINDS = [[51, 0.3], [74, 5.7], [77, 12.4], [92, 38.8]], DIRS = ['가운데에서 뻗음', '가로로', '아래로'];
+  const tb = document.querySelector('#wt tbody'), cells = [];
+  PICKS.forEach((p, i) => { const s = Math.min(1, WINDS[p.wind][1] / 15) * ROWS[p.scene][1], v = 0.35 + 1.1 * s, tr = document.createElement('tr');
+    tr.style.borderTop = '1px solid var(--line)';
+    tr.innerHTML = '<td style="padding:5px 8px 5px 0;font-family:var(--f-mono)">' + String(i + 1).padStart(2, '0') + '</td><td>' + ROWS[p.scene][0] + '</td><td>' + WINDS[p.wind][0] + ' · ' + WINDS[p.wind][1].toFixed(1) + ' m/s</td><td>' + s.toFixed(2) + '</td><td>' + v.toFixed(2) + '</td><td>' + DIRS[p.dir] + '</td><td style="text-align:right;font-family:var(--f-mono)"></td>';
+    tb.append(tr); cells.push([tr.lastChild, v]); });
+  console.assert(cells.length === 12, 'twelve cubes');
+  const cv = document.getElementById('wd'), cube = document.getElementById('cube');
+  (function loop() { KirkeWind.chart(cv);
+    const T = cube.duration ? cube.currentTime / cube.duration * 60 : 0;            // 영상 8초 = 시간 0 -> 60
+    cells.forEach(([td, v]) => td.textContent = (v * T).toFixed(1) + ' m');
+    requestAnimationFrame(loop); })();
+})();
 </script>
 </body>
 </html>
