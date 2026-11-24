@@ -23,7 +23,8 @@
     for (let o = 0; o < oct; o++) { s += a * perlin(x * f + 17.3 * o, y * f + 5.1 * o, z * f); n += a; a *= gain; f *= 2; } return s / n; }
   console.assert(Math.abs(perlin(1, 4, 0)) < 1e-9 && Math.abs(perlin(2, 5, 7)) < 1e-9, 'perlin is 0 on lattice points');
 
-  const N = 100, LV = 16, DZ = 0.18, F0 = 0.42, VOID = 0.22, L5 = 5;
+  const C = 0.385, N = 26, LV = 16, DZ = 0.18, F0 = 0.42, VOID = 0.22, L5 = 5;
+  const BX = i => ((i + 0.5) * C / 0.1 - 0.5) * 0.1;   // 칸 i 가운데 위치 m (바탕 무늬는 10 cm 격자 그대로, 칸은 퓌구시온 38.5 cm · 2026-11-24)
   const ROWS = [{ name: '키르케의 집', ax: 0, ay: 0, gain: 0.5, wind: 0.2 },
                 { name: '와인', ax: 2.5, ay: 0, gain: 0.62, wind: 1.0 },
                 { name: '바람 자루', ax: 0, ay: 6.0, gain: 0.55, wind: 1.0 }];
@@ -34,8 +35,8 @@
     const g = cv.getContext('2d');
     const state = Object.assign({ scene: 0, wind: 2, dir: 0, layers: 5, holes: 0.6, refr: 0.6, caus: 0.7 }, opt);
     const mask = Array.from({ length: L5 }, () => new Uint8Array(N * N)), first = new Int16Array(N * N);
-    const D = new Float32Array(N * N), DS = 4, DN = Math.ceil(N / DS) + 2, DC = new Float32Array(DN * DN);
-    const ST = 3, NC = Math.ceil((N + 2) / ST) + 2, HC = new Float32Array(NC * NC), H = new Float32Array((N + 2) * (N + 2));
+    const D = new Float32Array(N * N), DS = 1, DN = Math.ceil(N / DS) + 2, DC = new Float32Array(DN * DN);
+    const ST = 1, NC = Math.ceil((N + 2) / ST) + 2, HC = new Float32Array(NC * NC), H = new Float32Array((N + 2) * (N + 2));
     const BINS = 8;
     let FS = null, THR = 0, sNow = 0, voidPct = 0, ink = [43, 47, 54], paper = '#fff';
 
@@ -44,7 +45,7 @@
       const sx = 1 + row.ax * (0.4 + s), sy = 1 + row.ay * (0.5 + s), warp = 0.8 + 2.2 * s;
       const seed = state.scene * 4 + state.wind, F = new Float32Array(N * N * LV), top = new Float32Array(N * N);
       for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
-        const X = i * 0.1 + seed * 37, Y = j * 0.1 + seed * 37, ex = Math.min(i, N - 1 - i, j, N - 1 - j) / (N - 1);
+        const X = BX(i) + seed * 37, Y = BX(j) + seed * 37, ex = Math.max(0, Math.min(BX(i), 9.9 - BX(i), BX(j), 9.9 - BX(j))) / 9.9;
         let mx = -9;
         for (let k = 0; k < LV; k++) {
           const Z = (LV - 1 - k) * DZ;
@@ -62,7 +63,7 @@
     function flowField(t, s) {
       const v = 0.35 + 1.1 * s, e = 1.6 + 2.4 * s, mode = state.dir;
       for (let a = 0; a < DN; a++) for (let b = 0; b < DN; b++) {
-        const x = a * DS * 0.1, y = b * DS * 0.1; let n;
+        const x = BX(a), y = BX(b); let n;
         if (mode === 0) { const dx = x - 5, dy = y - 5, r = Math.hypot(dx, dy) + 1e-6;
           n = fbm(dx / r * 1.3 + 11.7, dy / r * 1.3, (r - v * t) * 0.38 * 1.4 / e + t * 0.05, 3, 0.55) - 0.35 * Math.exp(-(r * r) / 2.2); }
         else if (mode === 1) n = fbm((x - v * t) * 0.38 / e + 11.7, y * 0.38 * 1.3, t * 0.08, 3, 0.55);
@@ -99,7 +100,7 @@
       for (let l = state.layers - 1; l >= 0; l--) {
         const zl = t * 0.12 + l * 0.9;
         for (let a = 0; a < NC; a++) for (let b = 0; b < NC; b++) {
-          const x = (a * ST - 1) * 0.1, y = (b * ST - 1) * 0.1;
+          const x = BX(a - 1), y = BX(b - 1);
           const qx = (x - fx * t * 0.5) * 0.55 / stretchX, qy = (y - fy * t * 0.5) * 0.55 / stretchY;
           const w = fbm(qx * 0.6 + 4.2, qy * 0.6, zl * 0.5, 2, 0.5) * 1.4;
           HC[a * NC + b] = fbm(qx + w, qy - w, zl, 3, 0.5);
@@ -112,8 +113,8 @@
         for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
           const c = i * N + j; if (!m[c]) continue;
           const h = H[(i + 1) * (N + 2) + (j + 1)];
-          const gx = (H[(i + 2) * (N + 2) + (j + 1)] - H[i * (N + 2) + (j + 1)]) * 10;
-          const gy = (H[(i + 1) * (N + 2) + (j + 2)] - H[(i + 1) * (N + 2) + j]) * 10;
+          const gx = (H[(i + 2) * (N + 2) + (j + 1)] - H[i * (N + 2) + (j + 1)]) / C;
+          const gy = (H[(i + 1) * (N + 2) + (j + 2)] - H[(i + 1) * (N + 2) + j]) / C;
           const ridge = Math.pow(1 - Math.min(1, Math.abs(h) * 11), 2), k = state.refr * 2.2;
           const lx = base * Math.min(1.5, Math.max(0.12, 1 + k * gx)), ly = base * Math.min(1.5, Math.max(0.12, 1 + k * gy));
           const depth = (first[c] + l) / (LV + L5), trough = Math.min(1, Math.max(0, -h * 2.5));

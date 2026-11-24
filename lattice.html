@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
 <style>
-/* 도면 한 장: 왼쪽 큰 칸(10 × 10 m, 십자 100 × 100 × 5겹), 오른쪽 조작판. 좁으면 위아래로 쌓음 */
+/* 도면 한 장: 왼쪽 큰 칸(10 × 10 m, 십자 26 × 26 × 5겹), 오른쪽 조작판. 좁으면 위아래로 쌓음 */
 :root{
   --paper:#fbfbfc; --sheet:#ffffff; --ink:#2b2f36; --mute:#6b7280; --line:#dfe3ec;
   --blue:#6e8ce1; --chip:#eef1f8;
@@ -71,7 +71,7 @@ html,body{margin:0}*{box-sizing:border-box}
     <div>
       <div class="tag">Circe · water lattice</div>
       <h1>격자는 제자리, 빛만 물처럼</h1>
-      <p class="sub">10 cm 십자 100 × 100개를 5겹으로 겹쳤습니다. 십자의 중심은 한 칸도 움직이지 않고, 물결이 지나갈 때 팔 길이와 진하기가 바뀌며, 빈 공간이 열리고 닫히며 바람을 따라 흘러갑니다.</p>
+      <p class="sub">38.5 cm 십자 26 × 26개를 5겹으로 겹쳤습니다. 십자의 중심은 한 칸도 움직이지 않고, 물결이 지나갈 때 팔 길이와 진하기가 바뀌며, 빈 공간이 열리고 닫히며 바람을 따라 흘러갑니다.</p>
     </div>
   </header>
 
@@ -81,7 +81,7 @@ html,body{margin:0}*{box-sizing:border-box}
         <span class="corner c1"></span><span class="corner c2"></span><span class="corner c3"></span><span class="corner c4"></span>
         <canvas id="cv" aria-label="십자 5겹 물격자 한 칸, 10 × 10 m"></canvas>
       </div>
-      <div class="scale"><span>0 m</span><span>5 m</span><span>10 m · 십자 100칸</span></div>
+      <div class="scale"><span>0 m</span><span>5 m</span><span>10 m · 십자 26칸</span></div>
     </div>
 
     <aside>
@@ -123,8 +123,8 @@ html,body{margin:0}*{box-sizing:border-box}
       <fieldset>
         <legend>확대 · 오와 열 확인</legend>
         <div class="loupe">
-          <canvas id="lp" width="132" height="132" aria-label="커서 주변 십자 12 × 12칸 확대"></canvas>
-          <p>큰 그림 위에 커서나 손가락을 대면 그 자리 12 × 12칸을 키워 보여 줍니다. 십자 중심이 줄을 벗어나지 않습니다.</p>
+          <canvas id="lp" width="132" height="132" aria-label="커서 주변 십자 6 × 6칸 확대"></canvas>
+          <p>큰 그림 위에 커서나 손가락을 대면 그 자리 6 × 6칸을 키워 보여 줍니다. 십자 중심이 줄을 벗어나지 않습니다.</p>
         </div>
       </fieldset>
       <dl>
@@ -136,7 +136,7 @@ html,body{margin:0}*{box-sizing:border-box}
     </aside>
   </div>
 
-  <p class="note"><b>읽는 법.</b> 겹마다 같은 100 × 100 자리에 십자를 놓고, 위에서 몸이 시작되는 단부터 아래로 다섯 단까지 겹쳤습니다. 깊은 겹일수록 옅습니다. 물결은 Perlin 노이즈 높이장으로 만들었고, 기울기만큼 가로·세로 팔이 늘고 줄어 빛이 굴절하는 것처럼 보입니다. 물마루(밝은 그물 무늬)에서는 십자가 옅어집니다. 무늬와 장면·바람 규칙은 키르케 십자 시트와 같은 식이며, 바람 세기가 흐름 속도와 늘이는 정도를 정합니다.</p>
+  <p class="note"><b>읽는 법.</b> 겹마다 같은 26 × 26 자리에 십자를 놓고, 위에서 몸이 시작되는 단부터 아래로 다섯 단까지 겹쳤습니다. 깊은 겹일수록 옅습니다. 물결은 Perlin 노이즈 높이장으로 만들었고, 기울기만큼 가로·세로 팔이 늘고 줄어 빛이 굴절하는 것처럼 보입니다. 물마루(밝은 그물 무늬)에서는 십자가 옅어집니다. 무늬와 장면·바람 규칙은 키르케 십자 시트와 같은 식이며, 바람 세기가 흐름 속도와 늘이는 정도를 정합니다.</p>
 
   <section id="windData" style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
     <div class="tag">Wind data · 지금 재생 중인 바람</div>
@@ -177,7 +177,8 @@ html,body{margin:0}*{box-sizing:border-box}
   console.assert(Math.abs(perlin(1, 4, 0)) < 1e-9 && Math.abs(perlin(2, 5, 7)) < 1e-9, 'perlin is 0 on lattice points');
 
   // ---- 키르케 규칙 (make_kirke_cross_sheet.py 와 같은 값) ----
-  const N = 100, LV = 16, DZ = 0.18, F0 = 0.42, VOID = 0.22, L5 = 5;
+  const C = 0.385, N = 26, LV = 16, DZ = 0.18, F0 = 0.42, VOID = 0.22, L5 = 5;
+  const BX = i => ((i + 0.5) * C / 0.1 - 0.5) * 0.1;   // 칸 i 가운데 위치 m (바탕 무늬는 10 cm 격자 그대로, 칸은 퓌구시온 38.5 cm · 2026-11-24)
   const ROWS = [{ name: '키르케의 집', ax: 0, ay: 0, gain: 0.5, wind: 0.2 },
                 { name: '와인', ax: 2.5, ay: 0, gain: 0.62, wind: 1.0 },
                 { name: '바람 자루', ax: 0, ay: 6.0, gain: 0.55, wind: 1.0 }];
@@ -189,14 +190,14 @@ html,body{margin:0}*{box-sizing:border-box}
   let sBuilt = 0, lastBuild = 0;
 
   // mask[l][i*N+j]: l 번째 겹(몸이 시작된 단에서 l 단 아래)에 십자가 있나. first: 몸이 시작된 단
-  let mask = Array.from({ length: 5 }, () => new Uint8Array(100 * 100)), first = new Int16Array(N * N), sNow = 0;
+  let mask = Array.from({ length: 5 }, () => new Uint8Array(N * N)), first = new Int16Array(N * N), sNow = 0;
   function buildField() {
     const row = ROWS[state.scene], s = Math.min(1, spNow() / 15) * row.wind; sNow = s; sBuilt = s;
     const sx = 1 + row.ax * (0.4 + s), sy = 1 + row.ay * (0.5 + s), warp = 0.8 + 2.2 * s;
     const seed = state.scene * 4 + (state.orbit ? 2 : state.wind), F = new Float32Array(N * N * LV), top = new Float32Array(N * N);
     for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
-      const X = i * 0.1 + seed * 37, Y = j * 0.1 + seed * 37;
-      const ex = Math.min(i, N - 1 - i, j, N - 1 - j) / (N - 1);
+      const X = BX(i) + seed * 37, Y = BX(j) + seed * 37;
+      const ex = Math.max(0, Math.min(BX(i), 9.9 - BX(i), BX(j), 9.9 - BX(j))) / 9.9;
       let mx = -9;
       for (let k = 0; k < LV; k++) {
         const Z = (LV - 1 - k) * DZ;                                    // k = 0 이 맨 위
@@ -217,14 +218,14 @@ html,body{margin:0}*{box-sizing:border-box}
 
   // 빈 공간이 바뀌는 규칙: 칸마다 흐르는 노이즈 D 를 몸 값에 더함 -> 구멍이 열리고 닫히며 바람 방향으로 떠내려감
   let FS = null, THR = 0;
-  const D = new Float32Array(N * N), DS = 4, DN = Math.ceil(N / DS) + 2, DC = new Float32Array(DN * DN);
+  const D = new Float32Array(N * N), DS = 1, DN = Math.ceil(N / DS) + 2, DC = new Float32Array(DN * DN);
   // 빈 공간을 미는 바람 세 가지. v = 바람 세기에 따른 속도, e = 바람 방향으로 늘이는 배율
   //   radial: 가운데에서 바깥으로 뻗어감 (반지름을 따라 흐르고, 가운데가 잘 비어 구멍이 태어나는 자리)
   //   side  : 왼쪽에서 오른쪽으로 가로질러 붊      down: 위에서 아래로 붊
   function flowField(t, s) {
     const v = 0.35 + 1.1 * s, e = 1.6 + 2.4 * s, mode = state.dir;
     for (let a = 0; a < DN; a++) for (let b = 0; b < DN; b++) {
-      const x = a * DS * 0.1, y = b * DS * 0.1;
+      const x = BX(a), y = BX(b);
       let n;
       if (mode === 0) {
         const dx = x - 5, dy = y - 5, r = Math.hypot(dx, dy) + 1e-6;
@@ -259,8 +260,8 @@ html,body{margin:0}*{box-sizing:border-box}
   const cv = document.getElementById('cv'), g = cv.getContext('2d');
   const lp = document.getElementById('lp'), lg = lp.getContext('2d');
   let px = 0, ink = [43, 47, 54], paper = '#fff', look = { x: 0.5, y: 0.5 };
-  // 물 높이장은 3칸(30 cm)마다 계산하고 사이는 이어 붙임 (물결은 십자보다 훨씬 커서 충분, 계산량 1/9)
-  const ST = 3, NC = Math.ceil((N + 2) / ST) + 2, HC = new Float32Array(NC * NC);
+  // 물 높이장은 칸(38.5 cm)마다 계산
+  const ST = 1, NC = Math.ceil((N + 2) / ST) + 2, HC = new Float32Array(NC * NC);
   const H = new Float32Array((N + 2) * (N + 2));
   const BINS = 8;
 
@@ -297,7 +298,7 @@ html,body{margin:0}*{box-sizing:border-box}
       // 이 겹의 물 높이장 (테두리 한 칸 더 계산해 기울기를 구함)
       const zl = t * 0.12 + l * 0.9;
       for (let a = 0; a < NC; a++) for (let b = 0; b < NC; b++) {
-        const x = (a * ST - 1) * 0.1, y = (b * ST - 1) * 0.1;
+        const x = BX(a - 1), y = BX(b - 1);
         const qx = (x - fx * t * 0.5) * 0.55 / stretchX, qy = (y - fy * t * 0.5) * 0.55 / stretchY;
         const w = fbm(qx * 0.6 + 4.2, qy * 0.6, zl * 0.5, 2, 0.5) * 1.4;     // 물이 스스로 휘어 흐름
         HC[a * NC + b] = fbm(qx + w, qy - w, zl, 3, 0.5);
@@ -313,8 +314,8 @@ html,body{margin:0}*{box-sizing:border-box}
       for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
         const c = i * N + j; if (!m[c]) continue;
         const h = H[(i + 1) * (N + 2) + (j + 1)];
-        const gx = (H[(i + 2) * (N + 2) + (j + 1)] - H[i * (N + 2) + (j + 1)]) * 10;
-        const gy = (H[(i + 1) * (N + 2) + (j + 2)] - H[(i + 1) * (N + 2) + j]) * 10;
+        const gx = (H[(i + 2) * (N + 2) + (j + 1)] - H[i * (N + 2) + (j + 1)]) / C;
+        const gy = (H[(i + 1) * (N + 2) + (j + 2)] - H[(i + 1) * (N + 2) + j]) / C;
         const ridge = Math.pow(1 - Math.min(1, Math.abs(h) * 11), 2);           // 높이 0 근처의 가는 띠 = 밝은 물빛 그물
         const k = state.refr * 2.2;
         const lx = base * Math.min(1.5, Math.max(0.12, 1 + k * gx)), ly = base * Math.min(1.5, Math.max(0.12, 1 + k * gy));
@@ -331,12 +332,12 @@ html,body{margin:0}*{box-sizing:border-box}
       g.lineWidth = lw;
       for (let b = 1; b < BINS; b++) { g.strokeStyle = `rgba(${ink[0]},${ink[1]},${ink[2]},${(b + 0.5) / BINS * 0.62})`; g.stroke(paths[b]); }
     }
-    // 확대창: 커서 주변 12 × 12칸
-    const sz = 12 * px, sx0 = Math.max(0, Math.min(cv.width - sz, look.x * cv.width - sz / 2)), sy0 = Math.max(0, Math.min(cv.height - sz, look.y * cv.height - sz / 2));
+    // 확대창: 커서 주변 6 × 6칸
+    const sz = 6 * px, sx0 = Math.max(0, Math.min(cv.width - sz, look.x * cv.width - sz / 2)), sy0 = Math.max(0, Math.min(cv.height - sz, look.y * cv.height - sz / 2));
     lg.fillStyle = paper; lg.fillRect(0, 0, lp.width, lp.height);
     lg.imageSmoothingEnabled = false; lg.drawImage(cv, sx0, sy0, sz, sz, 0, 0, lp.width, lp.height);
     lg.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--blue'); lg.globalAlpha = 0.35; lg.lineWidth = 1;
-    for (let q = 0; q <= 12; q++) { const v = Math.round(q * lp.width / 12) + 0.5; lg.beginPath(); lg.moveTo(v, 0); lg.lineTo(v, lp.height); lg.moveTo(0, v); lg.lineTo(lp.width, v); lg.stroke(); }
+    for (let q = 0; q <= 6; q++) { const v = Math.round(q * lp.width / 6) + 0.5; lg.beginPath(); lg.moveTo(v, 0); lg.lineTo(v, lp.height); lg.moveTo(0, v); lg.lineTo(lp.width, v); lg.stroke(); }
     lg.globalAlpha = 1;
     return shown;
   }
