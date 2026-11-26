@@ -21,7 +21,7 @@ video{width:100%;height:auto;background:#fff}
   <nav><span class="brand">Circe · water lattice</span><a href="index.html">처음</a><a href="plan.html">평면 12장</a><a href="cube.html" aria-current="page">정육면체 12개</a><a href="lattice.html">물격자 한 칸</a></nav>
   <header>
     <h1>평면을 세운 정육면체</h1>
-    <p class="sub">평면과 같은 규칙(노이즈 · 장면 · 바람 · 빈 공간을 미는 바람)을 아래로 10 m 이어 계산한 정육면체 12개입니다. 재생하면 평면과 같은 순간에 정육면체 안의 빈 공간도 함께 흘러갑니다.</p>
+    <p class="sub">평면과 같은 규칙(노이즈 · 장면 · 바람 · 빈 공간을 미는 바람)을 아래로 20 m 이어 계산한 정육면체 12개입니다. 재생하면 평면과 같은 순간에 정육면체 안의 빈 공간도 함께 흘러갑니다.</p>
   </header>
   <div class="bar">
     <button class="btn" id="play" type="button">재생</button>
@@ -30,11 +30,11 @@ video{width:100%;height:auto;background:#fff}
   </div>
   <div class="sheet">
     <div class="pair" id="pair">
-      <figure><video id="cube" src="media/cubes.mp4" poster="media/cubes_poster.jpg" muted loop playsinline preload="auto"></video><figcaption>정육면체 12개 · 10 × 10 × 10 m</figcaption></figure>
+      <figure><video id="cube" src="media/cubes.mp4" poster="media/cubes_poster.jpg" muted loop playsinline preload="auto"></video><figcaption>정육면체 12개 · 20 × 20 × 20 m</figcaption></figure>
       <figure id="planFig" hidden><video id="plan" src="media/plan.mp4" poster="media/plan_poster.jpg" muted loop playsinline preload="auto"></video><figcaption>평면 12장 · 같은 순간</figcaption></figure>
     </div>
   </div>
-  <p class="note"><b>읽는 법.</b> 38.5 cm 칸 26 × 26 × 26 = 10 m 정육면체, 칸 하나 = XYZ 십자 하나. 위는 구름처럼 흩어지고 아래로 갈수록 덩어리가 됩니다. 위에서 내려오는 빛이 몸을 지날수록 줄어 안쪽과 아래가 어둡습니다. 1,200개(12칸 × 100순간)의 정육면체를 미리 계산해 영상으로 묶었습니다. 칸 배치는 평면 12장과 같습니다.</p>
+  <p class="note"><b>읽는 법.</b> 77 cm 칸 26 × 26 × 26 = 20 m 정육면체, 칸 하나 = XYZ 십자 하나. 위는 구름처럼 흩어지고 아래로 갈수록 덩어리가 됩니다. 위에서 내려오는 빛이 몸을 지날수록 줄어 안쪽과 아래가 어둡습니다. 1,200개(12칸 × 100순간)의 정육면체를 미리 계산해 영상으로 묶었습니다. 칸 배치는 평면 12장과 같습니다.</p>
   <section id="windData" style="display:flex;flex-direction:column;gap:10px">
     <div class="tag" style="font-family:var(--f-mono);font-size:12px;color:var(--blue);letter-spacing:.06em;text-transform:uppercase">Wind data · 정육면체에 넣은 바람</div>
     <canvas id="wd" aria-label="Aeolus 궤도 233지점의 지상 바람 세기와 정육면체에 쓴 네 지점" style="display:block;width:100%;height:190px;background:var(--sheet);border:1px solid var(--line)"></canvas>
