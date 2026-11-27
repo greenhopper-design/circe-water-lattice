@@ -60,13 +60,8 @@ dt{color:var(--mute)}dd{margin:0;font-family:var(--f-mono);font-variant-numeric:
 .note{font-size:13px;color:var(--mute);max-width:70ch;margin:0}
 .note b{color:var(--ink);font-weight:500}
 html,body{margin:0}*{box-sizing:border-box}
-/* ?embed=1: Aeolus 궤도 바람 뷰어 가운데 칸에 들어갈 때 — 그림 · 조작 · 바람 값만 */
-.embed body{padding:10px 12px 16px}
-.embed .wrap>nav{display:none!important}
-.embed header,.embed .wrap>.note,.embed #windData .note,.embed fieldset:has(.loupe){display:none}
-.embed .grid{grid-template-columns:minmax(0,1fr);gap:14px}
+.viewer{display:block;width:100%;height:clamp(560px,82vh,780px);border:1px solid var(--line);background:#fff}
 </style>
-<script>if (new URLSearchParams(location.search).has('embed')) { document.documentElement.classList.add('embed'); document.documentElement.dataset.theme = 'light'; }</script>
 </head>
 <body>
 
@@ -146,6 +141,8 @@ html,body{margin:0}*{box-sizing:border-box}
 
   <section id="windData" style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
     <div class="tag">Wind data · 지금 재생 중인 바람</div>
+    <!-- Aeolus 궤도 바람 뷰어: 같은 233지점. 지구본 검은 점 · 그래프 세로선이 위 물격자의 지금 지점을 따라감 -->
+    <iframe class="viewer" src="../aeolus-wind-viewer/" title="Aeolus 궤도 바람 뷰어 — 지구본과 시간 × 고도 바람 그래프" loading="lazy"></iframe>
     <canvas id="wd" aria-label="Aeolus 궤도 233지점의 지상 바람 세기와 지금 고른 지점" style="display:block;width:100%;height:190px;background:var(--sheet);border:1px solid var(--line)"></canvas>
     <dl id="wdl" style="grid-template-columns:auto 1fr auto 1fr;max-width:760px">
       <dt>궤도 지점</dt><dd id="wdO">–</dd><dt>풍속</dt><dd id="wdSp">–</dd>
@@ -153,7 +150,7 @@ html,body{margin:0}*{box-sizing:border-box}
       <dt>흐름 속도 v</dt><dd id="wdV">–</dd><dt>바람 쪽 늘임 e</dt><dd id="wdE">–</dd>
       <dt>재생 시간 t</dt><dd id="wdT">–</dd><dt>빈 공간이 흘러간 거리</dt><dd id="wdD">–</dd>
     </dl>
-    <p class="note"><b>바람 데이터가 재생되는 법.</b> 선은 바람 관측 위성 Aeolus(유럽우주국, 2018–2023)의 궤도 233지점을 지나며 만나는 지상 바람 세기입니다. 위성이 잰 값이 아니라 그 궤도 위의 2026-10-20 기상 모델 값(Open-Meteo)입니다. 233곳을 약한 순서로 세워 가장 약한 곳(51), 3분의 1(74), 3분의 2(77), 가장 센 곳(92)을 골랐고, 위 버튼으로 고른 지점이 파랗게 표시됩니다. <b>궤도 재생</b>을 누르면 점이 궤도를 따라 움직이고, 그때그때의 바람으로 무늬가 바뀝니다(한 바퀴 약 58초). 평면 12장과 정육면체 12개는 이 궤도 위 네 곳에서 멈춰 본 모습입니다. 고른 풍속은 15 m/s에서 1이 되도록 맞춘 세기 s가 되고(장면마다 받는 정도가 다름), s가 빈 공간의 흐름 속도 v와 바람 쪽으로 늘이는 정도 e를 정합니다. 재생하면 빈 공간이 v × t 만큼 바람 방향으로 흘러갑니다. <a href="https://greenhopper-design.github.io/aeolus-wind-viewer/" style="color:var(--blue)">Aeolus 궤도 바람 뷰어 열기</a></p>
+    <p class="note"><b>바람 데이터가 재생되는 법.</b> 선은 바람 관측 위성 Aeolus(유럽우주국, 2018–2023)의 궤도 233지점을 지나며 만나는 지상 바람 세기입니다. 위성이 잰 값이 아니라 그 궤도 위의 2026-10-20 기상 모델 값(Open-Meteo)입니다. 233곳을 약한 순서로 세워 가장 약한 곳(51), 3분의 1(74), 3분의 2(77), 가장 센 곳(92)을 골랐고, 위 버튼으로 고른 지점이 파랗게 표시됩니다. <b>궤도 재생</b>을 누르면 점이 궤도를 따라 움직이고, 그때그때의 바람으로 무늬가 바뀝니다(한 바퀴 약 58초). 평면 12장과 정육면체 12개는 이 궤도 위 네 곳에서 멈춰 본 모습입니다. 고른 풍속은 15 m/s에서 1이 되도록 맞춘 세기 s가 되고(장면마다 받는 정도가 다름), s가 빈 공간의 흐름 속도 v와 바람 쪽으로 늘이는 정도 e를 정합니다. 재생하면 빈 공간이 v × t 만큼 바람 방향으로 흘러갑니다. 위 지구본과 그래프는 같은 궤도의 0~25 km 바람이며, 검은 점과 세로선이 지금 재생 중인 지점입니다(그래프를 클릭하면 재생이 그 지점으로 건너뜀). <a href="https://greenhopper-design.github.io/aeolus-wind-viewer/" style="color:var(--blue)">Aeolus 궤도 바람 뷰어 크게 열기</a></p>
   </section>
 </div>
 
