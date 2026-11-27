@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>키르케 물격자 · 바람 뷰어</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+.wrap{max-width:1600px}
+.viewer{display:block;width:100%;height:max(560px,calc(100vh - 190px));border:1px dashed var(--blue);background:#fff}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav><span class="brand">Circe · water lattice</span><a href="index.html">처음</a><a href="plan.html">평면 12장</a><a href="cube.html">정육면체 12개</a><a href="lattice.html">물격자 한 칸</a><a href="aeolus.html" aria-current="page">바람 뷰어</a></nav>
+  <header>
+    <div class="tag">Aeolus · 궤도 바람</div>
+    <p class="sub">물격자에 넣은 바람이 온 곳입니다. Aeolus 궤도 233지점의 0~25 km 바람(2026-10-20 기상 모델 값, Open-Meteo). <a href="https://greenhopper-design.github.io/aeolus-wind-viewer/" style="color:var(--blue)">새 창에서 크게 열기</a></p>
+  </header>
+  <iframe class="viewer" src="https://greenhopper-design.github.io/aeolus-wind-viewer/" title="Aeolus 궤도 바람 뷰어 — 지구본과 시간 × 고도 바람 그래프"></iframe>
+</div>
+</body>
+</html>
