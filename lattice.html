@@ -60,7 +60,13 @@ dt{color:var(--mute)}dd{margin:0;font-family:var(--f-mono);font-variant-numeric:
 .note{font-size:13px;color:var(--mute);max-width:70ch;margin:0}
 .note b{color:var(--ink);font-weight:500}
 html,body{margin:0}*{box-sizing:border-box}
+/* ?embed=1: Aeolus 궤도 바람 뷰어 가운데 칸에 들어갈 때 — 그림 · 조작 · 바람 값만 */
+.embed body{padding:10px 12px 16px}
+.embed .wrap>nav{display:none!important}
+.embed header,.embed .wrap>.note,.embed #windData .note,.embed fieldset:has(.loupe){display:none}
+.embed .grid{grid-template-columns:minmax(0,1fr);gap:14px}
 </style>
+<script>if (new URLSearchParams(location.search).has('embed')) { document.documentElement.classList.add('embed'); document.documentElement.dataset.theme = 'light'; }</script>
 </head>
 <body>
 
