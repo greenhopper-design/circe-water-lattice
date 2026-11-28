@@ -92,6 +92,8 @@ html,body{margin:0}*{box-sizing:border-box}
           <button type="button" data-v="1" aria-pressed="false">와인<small>가로 결</small></button>
           <button type="button" data-v="2" aria-pressed="false">바람 자루<small>세로 흐름</small></button>
         </div>
+        <p id="sceneText" aria-live="polite" style="margin:2px 0 0;font-size:13.5px;line-height:1.75;color:var(--ink);white-space:pre-line"></p>
+        <p id="sceneHow" style="margin:0;font-size:12px;color:var(--mute)"></p>
       </fieldset>
       <fieldset>
         <legend>바람 · 아이올로스 궤도 지점</legend>
@@ -147,6 +149,8 @@ html,body{margin:0}*{box-sizing:border-box}
       </dl>
     </aside>
   </div>
+
+  <p class="note" style="color:var(--ink)">격자는 한 칸도 움직이지 않습니다. 움직이는 것은 그 사이를 지나가는 바람과 빛뿐입니다. 바람 자루에서는 쏟아지고, 와인에서는 풀어지고, 키르케의 집에서는 고입니다. 같은 십자가 세 번 다른 몸을 입습니다.</p>
 
   <p class="note"><b>읽는 법.</b> 겹마다 같은 26 × 26 자리에 십자를 놓고, 위에서 몸이 시작되는 단부터 아래로 다섯 단까지 겹쳤습니다. 깊은 겹일수록 옅습니다. 물결은 Perlin 노이즈 높이장으로 만들었고, 기울기만큼 가로·세로 팔이 늘고 줄어 빛이 굴절하는 것처럼 보입니다. 물마루(밝은 그물 무늬)에서는 십자가 옅어집니다. 무늬와 장면·바람 규칙은 키르케 십자 시트와 같은 식이며, 바람 세기가 흐름 속도와 늘이는 정도를 정합니다.</p>
 
@@ -434,7 +438,13 @@ html,body{margin:0}*{box-sizing:border-box}
       buildField(); showClimate(); if (!state.playing) redraw();
     });
   }
-  seg('scene', 'scene'); seg('wind', 'wind'); seg('dir', 'dir');
+  // 장면마다의 이야기 (오디세이아 10권) 와 쉬운 뜻
+  const TALE = [
+    ['숲 한가운데, 연기가 곧게 오르는 집이 있습니다.\n바다에서는 그렇게 사납던 바람이 이 집 앞에서는 숨을 죽입니다.\n무늬는 어느 쪽으로도 쓸리지 않고, 구름처럼 둥글게 고여 있습니다.', '바람을 5분의 1만 받습니다. 풍속을 바꿔도 무늬가 거의 흔들리지 않습니다.'],
+    ['키르케가 잔을 건넵니다.\n한 모금에 다리가 풀리고, 곧게 서 있던 몸이 옆으로 번집니다.\n무늬는 가로로 길게 눕고, 결은 거칠어집니다.\n이제 바람이 부는 대로 흔들립니다.', '무늬를 가로로 늘입니다. 잔무늬가 가장 세고, 바람을 그대로 받습니다.'],
+    ['아이올로스가 묶어 준 자루를, 고향이 보이는 바다에서 누군가 풀었습니다.\n갇혀 있던 바람이 한꺼번에 쏟아집니다.\n무늬는 위에서 아래로 길게 찢기고, 배는 왔던 길로 떠밀려 갑니다.', '무늬를 세로로 가장 크게 늘입니다. 바람을 그대로 받습니다.']];
+  function showTale() { $id('sceneText').textContent = TALE[state.scene][0]; $id('sceneHow').textContent = TALE[state.scene][1]; }
+  seg('scene', 'scene'); seg('wind', 'wind'); seg('dir', 'dir'); $id('scene').addEventListener('click', showTale); showTale();
   for (const [id, key, f] of [['layers', 'layers', v => v], ['holes', 'holes', v => v / 100],['refr', 'refr', v => v / 100], ['caus', 'caus', v => v / 100], ['speed', 'speed', v => v / 100]]) {
     const el = document.getElementById(id), out = document.getElementById(id + 'O');
     el.addEventListener('input', () => { state[key] = f(+el.value); out.textContent = el.value; if (!state.playing) redraw(); });
