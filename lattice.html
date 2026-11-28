@@ -150,7 +150,7 @@ html,body{margin:0}*{box-sizing:border-box}
 
   <p class="note"><b>읽는 법.</b> 겹마다 같은 26 × 26 자리에 십자를 놓고, 위에서 몸이 시작되는 단부터 아래로 다섯 단까지 겹쳤습니다. 깊은 겹일수록 옅습니다. 물결은 Perlin 노이즈 높이장으로 만들었고, 기울기만큼 가로·세로 팔이 늘고 줄어 빛이 굴절하는 것처럼 보입니다. 물마루(밝은 그물 무늬)에서는 십자가 옅어집니다. 무늬와 장면·바람 규칙은 키르케 십자 시트와 같은 식이며, 바람 세기가 흐름 속도와 늘이는 정도를 정합니다.</p>
 
-  <p class="note"><b>기후 데이터가 하는 일.</b> "데이터로 움직이기"를 켜면 손으로 정하던 것을 그 궤도 지점의 값이 정합니다. 바람 방향 → 빈 공간이 흘러가는 쪽(화면 오른쪽 = 동, 위 = 북). 고도별 바람 → 겹마다 다른 흐름(앞 겹 = 지상 0–6 km, 뒤로 갈수록 6–10.5 · 10.5–15 · 15–19.5 · 19.5–24 km). 습도 → 빈 칸 비율(습할수록 구멍이 줄어 38 % → 10 %). 파도 높이 → 물결 굴절(땅이나 얼음 위는 값이 없어 거의 0). 구름양 → 물빛(맑을수록 밝은 그물). 미세먼지 PM2.5 → 십자 굵기(많을수록 굵고 탁함). 바람은 기존 궤도 바람 파일, 나머지는 같은 날 같은 시각의 Open-Meteo 모델 값입니다. 끄면 아래 단추와 막대로 정합니다.</p>
+  <p class="note"><b>기후 데이터가 하는 일.</b> "데이터로 움직이기"를 켜면 손으로 정하던 것을 그 궤도 지점의 값이 정합니다. 바람 방향 → 빈 공간이 흘러가는 쪽(화면 오른쪽 = 동, 위 = 북). 고도별 바람 → 겹마다 다른 흐름(앞 겹 = 지상 0–6 km, 뒤로 갈수록 6–10.5 · 10.5–15 · 15–19.5 · 19.5–24 km). 습도 → 빈 칸 비율(28 % ~ 16 %, 습할수록 구멍이 줄어듦). 파도 높이 → 물결 굴절(35 ~ 85, 땅이나 얼음 위는 값이 없어 55). 구름양 → 물빛(95 ~ 45, 맑을수록 밝은 그물). 미세먼지 PM2.5 → 십자 굵기(0.85 ~ 1.15배, 많을수록 굵음). 233곳 가운데 값인 곳이 손으로 정하던 기본(22 % · 60 · 70 · 1배)과 같고, 데이터는 그 둘레에서 움직입니다. 바람은 기존 궤도 바람 파일, 나머지는 같은 날 같은 시각의 Open-Meteo 모델 값입니다. 끄면 아래 단추와 막대로 정합니다.</p>
 
   <section id="windData" style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
     <div class="tag">Wind data · 지금 재생 중인 바람</div>
@@ -210,19 +210,20 @@ html,body{margin:0}*{box-sizing:border-box}
     const o = oNow(), i = Math.floor(o) % 233, f = o - Math.floor(o), a = arr[i], b = arr[(i + 1) % 233];
     return a == null ? b : b == null ? a : a * (1 - f) + b * f;
   }
-  const span = k => { const v = CL[k].filter(x => x != null); return [Math.min(...v), Math.max(...v)]; };
-  const RG = CL ? { RH: span('RH'), WAVE: span('WAVE'), PM: span('PM') } : null;
+  const sorted = k => Float64Array.from(CL[k].filter(x => x != null)).sort();
+  const RG = CL ? { RH: sorted('RH'), WAVE: sorted('WAVE'), CLOUD: sorted('CLOUD'), PM: sorted('PM') } : null;
   const UB = CL ? [0, 1, 2, 3, 4].map(l => CL.U.map(r => r[l])) : null, VB = CL ? [0, 1, 2, 3, 4].map(l => CL.V.map(r => r[l])) : null;
-  const nrm = (v, r) => v == null ? null : Math.max(0, Math.min(1, (v - r[0]) / (r[1] - r[0] || 1)));
+  const rank = (v, r) => { if (v == null) return null; let lo = 0, eq = 0; for (const x of r) { if (x < v) lo++; else if (x === v) eq++; } return (lo + eq / 2) / r.length; };   // 233곳 중 몇 번째인가 (0 ~ 1, 가운데 = 0.5)
   const on = () => !!(state.data && CL);
   function bandWind(l) {                                                      // 겹 l 의 바람: 화면에서의 방향(오른쪽 = 동, 아래 = 남)과 세기 m/s
     const u = clAt(UB[l]), v = clAt(VB[l]), sp = Math.hypot(u, v) || 1e-6; return { cx: u / sp, cy: -v / sp, sp, u, v };
   }
   function eff() {                                                            // 빈 칸 비율 · 굴절 · 물빛 · 먼지(0~1)
-    if (!on()) return { void: VOID, refr: state.refr, caus: state.caus, dust: 0 };
-    const rh = nrm(clAt(CL.RH), RG.RH), wv = nrm(clAt(CL.WAVE), RG.WAVE), cl = clAt(CL.CLOUD), pm = nrm(clAt(CL.PM), RG.PM);
-    return { void: rh == null ? VOID : 0.38 - 0.28 * rh, refr: wv == null ? 0.08 : 0.15 + 0.85 * Math.sqrt(wv),
-             caus: cl == null ? state.caus : 0.15 + 0.85 * (1 - cl / 100), dust: pm == null ? 0 : Math.sqrt(pm) };
+    if (!on()) return { void: VOID, refr: state.refr, caus: state.caus, thick: 1 };
+    // 가운데 값인 곳이 예전 기본(빈 칸 22 %, 굴절 60, 물빛 70, 굵기 1)이 되고, 데이터는 그 둘레에서만 움직임
+    const rh = rank(clAt(CL.RH), RG.RH), wv = rank(clAt(CL.WAVE), RG.WAVE), cl = rank(clAt(CL.CLOUD), RG.CLOUD), pm = rank(clAt(CL.PM), RG.PM);
+    return { void: rh == null ? VOID : VOID - 0.12 * (rh - 0.5), refr: wv == null ? 0.55 : 0.6 + 0.5 * (wv - 0.5),
+             caus: cl == null ? 0.7 : 0.7 - 0.5 * (cl - 0.5), thick: pm == null ? 1 : 1 + 0.3 * (pm - 0.5) };
   }
   const COMPASS = ['북', '북동', '동', '남동', '남', '남서', '서', '북서'];
   function showClimate() {
@@ -236,7 +237,7 @@ html,body{margin:0}*{box-sizing:border-box}
     $id('clRh').textContent = f(rh, 0) + ' % → 빈 칸 ' + (E.void * 100).toFixed(0) + ' %';
     $id('clWave').textContent = (wv == null ? '없음 (땅·얼음)' : f(wv, 1) + ' m') + ' → 굴절 ' + Math.round(E.refr * 100);
     $id('clCloud').textContent = f(cl, 0) + ' % → 물빛 ' + Math.round(E.caus * 100);
-    $id('clPm').textContent = f(pm, 1) + ' ㎍/㎥ → 굵기 × ' + (1 + 0.9 * E.dust).toFixed(2);
+    $id('clPm').textContent = f(pm, 1) + ' ㎍/㎥ → 굵기 × ' + E.thick.toFixed(2);
   }
 
   // mask[l][i*N+j]: l 번째 겹(몸이 시작된 단에서 l 단 아래)에 십자가 있나. first: 몸이 시작된 단
@@ -352,7 +353,7 @@ html,body{margin:0}*{box-sizing:border-box}
     if (state.holes > 0 || dataOn) updateMask();
     g.fillStyle = paper; g.fillRect(0, 0, cv.width, cv.height);
     g.lineCap = 'butt';
-    const base = px * 0.56, lw = Math.max(1, px * 0.075) * (1 + 0.9 * E.dust);   // 38.5 cm 칸: 팔을 칸의 56 %로 짧게 · 가늘게 해 이웃 십자와 이어져 철망처럼 보이지 않게
+    const base = px * 0.56, lw = Math.max(1, px * 0.075) * E.thick;   // 38.5 cm 칸: 팔을 칸의 56 %로 짧게 · 가늘게 해 이웃 십자와 이어져 철망처럼 보이지 않게
     let shown = 0;
     for (let l = state.layers - 1; l >= 0; l--) {
       // 이 겹의 물 높이장 (테두리 한 칸 더 계산해 기울기를 구함)
