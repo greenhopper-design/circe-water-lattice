@@ -104,6 +104,18 @@ html,body{margin:0}*{box-sizing:border-box}
         <button type="button" class="play" id="orbitBtn" aria-pressed="false" style="background:var(--sheet);color:var(--ink)">궤도 재생</button>
       </fieldset>
       <fieldset>
+        <legend>기후 데이터 · 지금 궤도 지점의 값</legend>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px"><input id="useData" type="checkbox" checked style="accent-color:var(--blue)"> 데이터로 움직이기</label>
+        <dl id="cl">
+          <dt>바람 방향</dt><dd id="clDir">–</dd>
+          <dt>고도별 바람</dt><dd id="clAlt">–</dd>
+          <dt>습도</dt><dd id="clRh">–</dd>
+          <dt>파도 높이</dt><dd id="clWave">–</dd>
+          <dt>구름양</dt><dd id="clCloud">–</dd>
+          <dt>미세먼지</dt><dd id="clPm">–</dd>
+        </dl>
+      </fieldset>
+      <fieldset>
         <legend>빈 공간을 미는 바람</legend>
         <div class="seg s3" id="dir">
           <button type="button" data-v="0" aria-pressed="true">가운데에서<small>뻗어감</small></button>
@@ -138,6 +150,8 @@ html,body{margin:0}*{box-sizing:border-box}
 
   <p class="note"><b>읽는 법.</b> 겹마다 같은 26 × 26 자리에 십자를 놓고, 위에서 몸이 시작되는 단부터 아래로 다섯 단까지 겹쳤습니다. 깊은 겹일수록 옅습니다. 물결은 Perlin 노이즈 높이장으로 만들었고, 기울기만큼 가로·세로 팔이 늘고 줄어 빛이 굴절하는 것처럼 보입니다. 물마루(밝은 그물 무늬)에서는 십자가 옅어집니다. 무늬와 장면·바람 규칙은 키르케 십자 시트와 같은 식이며, 바람 세기가 흐름 속도와 늘이는 정도를 정합니다.</p>
 
+  <p class="note"><b>기후 데이터가 하는 일.</b> "데이터로 움직이기"를 켜면 손으로 정하던 것을 그 궤도 지점의 값이 정합니다. 바람 방향 → 빈 공간이 흘러가는 쪽(화면 오른쪽 = 동, 위 = 북). 고도별 바람 → 겹마다 다른 흐름(앞 겹 = 지상 0–6 km, 뒤로 갈수록 6–10.5 · 10.5–15 · 15–19.5 · 19.5–24 km). 습도 → 빈 칸 비율(습할수록 구멍이 줄어 38 % → 10 %). 파도 높이 → 물결 굴절(땅이나 얼음 위는 값이 없어 거의 0). 구름양 → 물빛(맑을수록 밝은 그물). 미세먼지 PM2.5 → 십자 굵기(많을수록 굵고 탁함). 바람은 기존 궤도 바람 파일, 나머지는 같은 날 같은 시각의 Open-Meteo 모델 값입니다. 끄면 아래 단추와 막대로 정합니다.</p>
+
   <section id="windData" style="display:flex;flex-direction:column;gap:10px;margin-top:8px">
     <div class="tag">Wind data · 지금 재생 중인 바람</div>
     <canvas id="wd" aria-label="Aeolus 궤도 233지점의 지상 바람 세기와 지금 고른 지점" style="display:block;width:100%;height:190px;background:var(--sheet);border:1px solid var(--line)"></canvas>
@@ -152,6 +166,7 @@ html,body{margin:0}*{box-sizing:border-box}
 </div>
 
 <script src="wind.js"></script>
+<script src="climate.js"></script>
 <script>
 (() => {
   // ---- Ken Perlin 개선판(2002) 3D 노이즈, 시트 스크립트와 같은 식 ----
@@ -183,11 +198,46 @@ html,body{margin:0}*{box-sizing:border-box}
                 { name: '와인', ax: 2.5, ay: 0, gain: 0.62, wind: 1.0 },
                 { name: '바람 자루', ax: 0, ay: 6.0, gain: 0.55, wind: 1.0 }];
   const WINDS = [{ o: 51, sp: 0.3 }, { o: 74, sp: 5.7 }, { o: 77, sp: 12.4 }, { o: 92, sp: 38.8 }];
-  const state = { scene: 0, wind: 2, dir: 0, layers: 3, holes: 0.6, refr: 0.6, caus: 0.7, speed: 0.4, playing: true, t: 0, orbit: false, oi: 77 };
+  const state = { data: true, hx: 0, hy: 0, wx: [0, 0, 0, 0, 0], wy: [0, 0, 0, 0, 0], scene: 0, wind: 2, dir: 0, layers: 3, holes: 0.6, refr: 0.6, caus: 0.7, speed: 0.4, playing: true, t: 0, orbit: false, oi: 77 };
   // 궤도 재생: oi = 궤도 지점(0 ~ 232, 소수 = 두 지점 사이). 고정일 때는 고른 지점의 풍속
   const SPD = window.KirkeWind.SP;
   const spNow = () => { if (!state.orbit) return WINDS[state.wind].sp; const i = Math.floor(state.oi) % 233, f = state.oi - Math.floor(state.oi); return SPD[i] * (1 - f) + SPD[(i + 1) % 233] * f; };
   let sBuilt = 0, lastBuild = 0;
+  // ---- 기후 데이터 (climate.js): 켜져 있으면 손 대신 그 궤도 지점의 값이 정함 ----
+  const CL = window.KirkeClimate || null, $id = id => document.getElementById(id);
+  const oNow = () => state.orbit ? state.oi : WINDS[state.wind].o;
+  function clAt(arr) {                                                        // 두 지점 사이를 이어 읽음. 값이 없으면 null
+    const o = oNow(), i = Math.floor(o) % 233, f = o - Math.floor(o), a = arr[i], b = arr[(i + 1) % 233];
+    return a == null ? b : b == null ? a : a * (1 - f) + b * f;
+  }
+  const span = k => { const v = CL[k].filter(x => x != null); return [Math.min(...v), Math.max(...v)]; };
+  const RG = CL ? { RH: span('RH'), WAVE: span('WAVE'), PM: span('PM') } : null;
+  const UB = CL ? [0, 1, 2, 3, 4].map(l => CL.U.map(r => r[l])) : null, VB = CL ? [0, 1, 2, 3, 4].map(l => CL.V.map(r => r[l])) : null;
+  const nrm = (v, r) => v == null ? null : Math.max(0, Math.min(1, (v - r[0]) / (r[1] - r[0] || 1)));
+  const on = () => !!(state.data && CL);
+  function bandWind(l) {                                                      // 겹 l 의 바람: 화면에서의 방향(오른쪽 = 동, 아래 = 남)과 세기 m/s
+    const u = clAt(UB[l]), v = clAt(VB[l]), sp = Math.hypot(u, v) || 1e-6; return { cx: u / sp, cy: -v / sp, sp, u, v };
+  }
+  function eff() {                                                            // 빈 칸 비율 · 굴절 · 물빛 · 먼지(0~1)
+    if (!on()) return { void: VOID, refr: state.refr, caus: state.caus, dust: 0 };
+    const rh = nrm(clAt(CL.RH), RG.RH), wv = nrm(clAt(CL.WAVE), RG.WAVE), cl = clAt(CL.CLOUD), pm = nrm(clAt(CL.PM), RG.PM);
+    return { void: rh == null ? VOID : 0.38 - 0.28 * rh, refr: wv == null ? 0.08 : 0.15 + 0.85 * Math.sqrt(wv),
+             caus: cl == null ? state.caus : 0.15 + 0.85 * (1 - cl / 100), dust: pm == null ? 0 : Math.sqrt(pm) };
+  }
+  const COMPASS = ['북', '북동', '동', '남동', '남', '남서', '서', '북서'];
+  function showClimate() {
+    const o = on(), E = eff();
+    for (const b of document.querySelectorAll('#dir button')) b.disabled = o;
+    for (const id of ['refr', 'caus']) { const el = $id(id); el.disabled = o; el.value = Math.round((o ? E[id] : state[id]) * 100); $id(id + 'O').textContent = el.value; }
+    if (!CL) { $id('useData').disabled = true; $id('clDir').textContent = '자료 없음'; return; }
+    const w = bandWind(0), rh = clAt(CL.RH), wv = clAt(CL.WAVE), cl = clAt(CL.CLOUD), pm = clAt(CL.PM), f = (v, d) => v == null ? '없음' : v.toFixed(d);
+    $id('clDir').textContent = COMPASS[Math.round((Math.atan2(w.u, w.v) * 180 / Math.PI + 360) / 45) % 8] + '쪽으로';
+    $id('clAlt').textContent = [0, 1, 2, 3, 4].map(l => bandWind(l).sp.toFixed(0)).join('·') + ' m/s';
+    $id('clRh').textContent = f(rh, 0) + ' % → 빈 칸 ' + (E.void * 100).toFixed(0) + ' %';
+    $id('clWave').textContent = (wv == null ? '없음 (땅·얼음)' : f(wv, 1) + ' m') + ' → 굴절 ' + Math.round(E.refr * 100);
+    $id('clCloud').textContent = f(cl, 0) + ' % → 물빛 ' + Math.round(E.caus * 100);
+    $id('clPm').textContent = f(pm, 1) + ' ㎍/㎥ → 굵기 × ' + (1 + 0.9 * E.dust).toFixed(2);
+  }
 
   // mask[l][i*N+j]: l 번째 겹(몸이 시작된 단에서 l 단 아래)에 십자가 있나. first: 몸이 시작된 단
   let mask = Array.from({ length: 5 }, () => new Uint8Array(N * N)), first = new Int16Array(N * N), sNow = 0;
@@ -209,7 +259,7 @@ html,body{margin:0}*{box-sizing:border-box}
       }
       top[i * N + j] = mx;
     }
-    FS = F; THR = Float32Array.from(top).sort()[Math.floor(VOID * N * N)];
+    FS = F; TOPS = Float32Array.from(top).sort(); THR = TOPS[Math.floor(eff().void * N * N)];
     D.fill(0); updateMask();
     showWind();
   }
@@ -217,17 +267,20 @@ html,body{margin:0}*{box-sizing:border-box}
   function showWind() { document.getElementById('nWind').textContent = '궤도 ' + (state.orbit ? Math.floor(state.oi) : WINDS[state.wind].o) + ' · ' + spNow().toFixed(1) + ' m/s'; }
 
   // 빈 공간이 바뀌는 규칙: 칸마다 흐르는 노이즈 D 를 몸 값에 더함 -> 구멍이 열리고 닫히며 바람 방향으로 떠내려감
-  let FS = null, THR = 0;
+  let FS = null, THR = 0, TOPS = null;
   const D = new Float32Array(N * N), DS = 1, DN = Math.ceil(N / DS) + 2, DC = new Float32Array(DN * DN);
   // 빈 공간을 미는 바람 세 가지. v = 바람 세기에 따른 속도, e = 바람 방향으로 늘이는 배율
   //   radial: 가운데에서 바깥으로 뻗어감 (반지름을 따라 흐르고, 가운데가 잘 비어 구멍이 태어나는 자리)
   //   side  : 왼쪽에서 오른쪽으로 가로질러 붊      down: 위에서 아래로 붊
   function flowField(t, s) {
-    const v = 0.35 + 1.1 * s, e = 1.6 + 2.4 * s, mode = state.dir;
+    const v = 0.35 + 1.1 * s, e = 1.6 + 2.4 * s, mode = state.dir, W0 = on() ? bandWind(0) : null;
     for (let a = 0; a < DN; a++) for (let b = 0; b < DN; b++) {
       const x = BX(a), y = BX(b);
       let n;
-      if (mode === 0) {
+      if (W0) {                                                                // 데이터의 바람 방향으로: 지금까지 흘러간 거리(hx, hy)만큼 밀고, 바람 쪽으로 늘임
+        const dx = x - 5 - state.hx, dy = y - 5 - state.hy;
+        n = fbm((dx * W0.cx + dy * W0.cy) * 0.38 / e + 11.7, (dy * W0.cx - dx * W0.cy) * 0.38 * 1.3, t * 0.08, 3, 0.55);
+      } else if (mode === 0) {
         const dx = x - 5, dy = y - 5, r = Math.hypot(dx, dy) + 1e-6;
         n = fbm(dx / r * 1.3 + 11.7, dy / r * 1.3, (r - v * t) * 0.38 * 1.4 / e + t * 0.05, 3, 0.55)
             - 0.35 * Math.exp(-(r * r) / 2.2);                                   // 가운데는 비기 쉬움
@@ -283,23 +336,30 @@ html,body{margin:0}*{box-sizing:border-box}
       if (Math.abs(sNow - sBuilt) > 0.06 && performance.now() - lastBuild > 500) { buildField(); lastBuild = performance.now(); }
     }
     const row = ROWS[state.scene], s = sNow;
-    if (state.playing) state.t += dt * (0.15 + 1.4 * state.speed) * (0.4 + s);
+    const dT = state.playing ? dt * (0.15 + 1.4 * state.speed) * (0.4 + s) : 0, E = eff(), dataOn = on(); state.t += dT;
+    if (dataOn) {                                                             // 흘러간 거리를 쌓음: 빈 공간은 지상 바람으로, 물결은 겹마다 제 고도의 바람으로
+      const w0 = bandWind(0), g0 = 0.4 + Math.min(1, w0.sp / 15); state.hx += (0.35 + 1.1 * s) * dT * w0.cx; state.hy += (0.35 + 1.1 * s) * dT * w0.cy;
+      for (let l = 0; l < 5; l++) { const b = bandWind(l), k = 0.5 * Math.min(3, (0.4 + Math.min(1, b.sp / 15)) / g0) * dT; state.wx[l] += k * b.cx; state.wy[l] += k * b.cy; }
+      THR = TOPS[Math.floor(E.void * N * N)];
+    }
+    const dirM = dataOn ? 0 : state.dir;
     const t = state.t;
     // 물결도 고른 바람 방향을 따라 흐름 (가운데에서 퍼짐은 물결 자체는 천천히 돌기)
-    const fx = state.dir === 1 ? 1 : (state.dir === 2 ? 0 : 0.35 * Math.cos(t * 0.05));
-    const fy = state.dir === 2 ? 1 : (state.dir === 1 ? 0 : 0.35 * Math.sin(t * 0.05));
-    const stretchX = 1 + (state.dir === 1 ? 1.2 : row.ax * 0.25) * (0.4 + s), stretchY = 1 + (state.dir === 2 ? 1.2 : row.ay * 0.15) * (0.5 + s);
-    if (state.holes > 0) { flowField(t, s); updateMask(); }
+    const fx = dirM === 1 ? 1 : (dirM === 2 ? 0 : 0.35 * Math.cos(t * 0.05));
+    const fy = dirM === 2 ? 1 : (dirM === 1 ? 0 : 0.35 * Math.sin(t * 0.05));
+    const stretchX = 1 + (dirM === 1 ? 1.2 : row.ax * 0.25) * (0.4 + s), stretchY = 1 + (dirM === 2 ? 1.2 : row.ay * 0.15) * (0.5 + s);
+    if (state.holes > 0) flowField(t, s);
+    if (state.holes > 0 || dataOn) updateMask();
     g.fillStyle = paper; g.fillRect(0, 0, cv.width, cv.height);
     g.lineCap = 'butt';
-    const base = px * 0.56, lw = Math.max(1, px * 0.075);   // 38.5 cm 칸: 팔을 칸의 56 %로 짧게 · 가늘게 해 이웃 십자와 이어져 철망처럼 보이지 않게
+    const base = px * 0.56, lw = Math.max(1, px * 0.075) * (1 + 0.9 * E.dust);   // 38.5 cm 칸: 팔을 칸의 56 %로 짧게 · 가늘게 해 이웃 십자와 이어져 철망처럼 보이지 않게
     let shown = 0;
     for (let l = state.layers - 1; l >= 0; l--) {
       // 이 겹의 물 높이장 (테두리 한 칸 더 계산해 기울기를 구함)
       const zl = t * 0.12 + l * 0.9;
       for (let a = 0; a < NC; a++) for (let b = 0; b < NC; b++) {
         const x = BX(a - 1), y = BX(b - 1);
-        const qx = (x - fx * t * 0.5) * 0.55 / stretchX, qy = (y - fy * t * 0.5) * 0.55 / stretchY;
+        const qx = (x - (dataOn ? state.wx[l] : fx * t * 0.5)) * 0.55 / stretchX, qy = (y - (dataOn ? state.wy[l] : fy * t * 0.5)) * 0.55 / stretchY;
         const w = fbm(qx * 0.6 + 4.2, qy * 0.6, zl * 0.5, 2, 0.5) * 1.4;     // 물이 스스로 휘어 흐름
         HC[a * NC + b] = fbm(qx + w, qy - w, zl, 3, 0.5);
       }
@@ -317,11 +377,11 @@ html,body{margin:0}*{box-sizing:border-box}
         const gx = (H[(i + 2) * (N + 2) + (j + 1)] - H[i * (N + 2) + (j + 1)]) / C;
         const gy = (H[(i + 1) * (N + 2) + (j + 2)] - H[(i + 1) * (N + 2) + j]) / C;
         const ridge = Math.pow(1 - Math.min(1, Math.abs(h) * 11), 2);           // 높이 0 근처의 가는 띠 = 밝은 물빛 그물
-        const k = state.refr * 2.2;
+        const k = E.refr * 2.2;
         const lx = base * lsc * Math.min(1.5, Math.max(0.25, 1 + 0.5 * k * gx)), ly = base * lsc * Math.min(1.5, Math.max(0.25, 1 + 0.5 * k * gy));   // 굴절로 늘고 줄되 칸(1.5 × 0.56 = 0.84칸) 밖으로 안 나감
         const depth = (first[c] + l) / (LV + L5);
         const trough = Math.min(1, Math.max(0, -h * 2.5));                      // 물골 = 깊고 진함
-        let a = layerA * (1 - 0.55 * depth) * (1 - state.caus * 0.95 * ridge) * (0.55 + 0.75 * trough * state.caus + 0.45 * (1 - state.caus));
+        let a = layerA * (1 - 0.55 * depth) * (1 - E.caus * 0.95 * ridge) * (0.55 + 0.75 * trough * E.caus + 0.45 * (1 - E.caus));
         const bin = Math.max(0, Math.min(BINS - 1, Math.floor(a * BINS)));
         if (bin === 0) continue;
         const cx = (i + 0.5) * px, cy = (j + 0.5) * px, p = paths[bin];
@@ -349,11 +409,11 @@ html,body{margin:0}*{box-sizing:border-box}
     nShown = frame(dt); acc += dt; cnt++;
     if (acc > 0.5) { document.getElementById('nFps').textContent = Math.round(cnt / acc) + ' fps';
       document.getElementById('nVoid').textContent = voidPct.toFixed(0) + ' %';
-      document.getElementById('nCross').textContent = nShown.toLocaleString('ko-KR') + '개'; acc = 0; cnt = 0; }
+      document.getElementById('nCross').textContent = nShown.toLocaleString('ko-KR') + '개'; acc = 0; cnt = 0; showClimate(); }
     if (state.playing) requestAnimationFrame(loop);
   }
   function redraw() { nShown = frame(0); document.getElementById('nCross').textContent = nShown.toLocaleString('ko-KR') + '개';
-    document.getElementById('nVoid').textContent = voidPct.toFixed(0) + ' %'; }
+    document.getElementById('nVoid').textContent = voidPct.toFixed(0) + ' %'; showClimate(); }
 
   // ---- 조작 ----
   const orbitBtn = document.getElementById('orbitBtn');
@@ -370,7 +430,7 @@ html,body{margin:0}*{box-sizing:border-box}
       const b = e.target.closest('button'); if (!b) return;
       state[key] = +b.dataset.v; if (key === 'wind' && state.orbit) { state.orbit = false; orbitBtn.setAttribute('aria-pressed', 'false'); orbitBtn.textContent = '궤도 재생'; orbitBtn.style.borderColor = ''; orbitBtn.style.boxShadow = ''; }
       for (const x of e.currentTarget.querySelectorAll('button')) x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
-      buildField(); if (!state.playing) redraw();
+      buildField(); showClimate(); if (!state.playing) redraw();
     });
   }
   seg('scene', 'scene'); seg('wind', 'wind'); seg('dir', 'dir');
@@ -378,6 +438,7 @@ html,body{margin:0}*{box-sizing:border-box}
     const el = document.getElementById(id), out = document.getElementById(id + 'O');
     el.addEventListener('input', () => { state[key] = f(+el.value); out.textContent = el.value; if (!state.playing) redraw(); });
   }
+  $id('useData').addEventListener('change', e => { state.data = e.target.checked; buildField(); showClimate(); if (!state.playing) redraw(); });
   const playBtn = document.getElementById('play');
   function setPlaying(on) { state.playing = on; playBtn.textContent = on ? '멈춤' : '재생'; if (on) { last = performance.now(); requestAnimationFrame(loop); } }
   playBtn.addEventListener('click', () => setPlaying(!state.playing));
@@ -387,8 +448,8 @@ html,body{margin:0}*{box-sizing:border-box}
   mq.addEventListener('change', () => { readColors(); if (!state.playing) redraw(); });
   new MutationObserver(() => { readColors(); if (!state.playing) redraw(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-  readColors(); resize(); buildField();
-  window.__kirke = { state, ROWS, WINDS, s: () => sNow, sp: spNow };
+  readColors(); resize(); buildField(); showClimate();
+  window.__kirke = { state, ROWS, WINDS, s: () => sNow, sp: spNow, on, eff, voidPct: () => voidPct };
   { const q = new URLSearchParams(location.search); if (q.get('orbit')) setOrbit(true, q.get('oi') != null ? +q.get('oi') : null); }   // ?orbit=1&oi=88 로 바로 궤도 재생   // 아래 바람 데이터 판이 읽음
   { let a = 0, b = 0; for (let c = 0; c < N * N; c++) { a += mask[0][c]; b += first[c] < LV ? 1 : 0; }
     console.assert(a === b, 'layer 0 equals solid columns'); }
@@ -430,7 +491,7 @@ html,body{margin:0}*{box-sizing:border-box}
     $('wdR').textContent = '233곳 중 ' + (SP.filter(q => q < spv).length + 1) + '번째';
     $('wdS').textContent = s.toFixed(2) + '  (' + row.name + ' × ' + row.wind + ')';
     $('wdV').textContent = v.toFixed(2); $('wdE').textContent = '× ' + e.toFixed(2);
-    $('wdT').textContent = t.toFixed(1); $('wdD').textContent = (v * t).toFixed(1) + ' m · ' + DIRS[K.state.dir];
+    $('wdT').textContent = t.toFixed(1); $('wdD').textContent = (v * t).toFixed(1) + ' m · ' + (K.on && K.on() ? '데이터의 바람 방향' : DIRS[K.state.dir]);
   }
   (function loop() { draw(); requestAnimationFrame(loop); })();
 })();
